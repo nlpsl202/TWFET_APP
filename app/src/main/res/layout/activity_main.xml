@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/background">
+
+    <RelativeLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginTop="250dp">
+
+        <ImageView
+            android:id="@+id/inputText"
+            android:layout_width="130dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/activity_main_text" />
+
+        <EditText
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/SPS_ID_Edt"
+            android:background="@drawable/activity_main_input"
+            android:inputType="text"
+            android:paddingLeft="40dp"
+            android:hint="請掃描園區QRCODE"
+            android:layout_alignParentRight="true"/>
+
+    </RelativeLayout>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="130dp"
+        android:id="@+id/LoginBtn"
+        android:background="@drawable/activity_main_btn_selector" />
+
+</LinearLayout>
