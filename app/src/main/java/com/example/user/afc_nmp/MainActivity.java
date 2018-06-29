@@ -24,8 +24,9 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 public class MainActivity extends Activity {
-    EditText SPS_ID_Edt;
+    EditText DEVICE_ID_Edt;
     Button btnlogin,btnDBIPBtn;
+    String SPS_ID,DEVICE_ID;
     //建立連線
     Connection con;
     Statement stmt;
@@ -65,19 +66,22 @@ public class MainActivity extends Activity {
             }
         }
 
-        SPS_ID_Edt = (EditText) findViewById(R.id.SPS_ID_Edt);
+        DEVICE_ID_Edt = (EditText) findViewById(R.id.DEVICE_ID_Edt);
         btnlogin = (Button) findViewById(R.id.LoginBtn);
         //btnDBIPBtn=(Button) findViewById(R.id.DBIPBtn);
 
         btnlogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!mydbHelper.CheckExistSPS_ID(SPS_ID_Edt.getText().toString())){
-                    Toast.makeText(MainActivity.this, "無此園區代碼", Toast.LENGTH_SHORT).show();
+                DEVICE_ID=DEVICE_ID_Edt.getText().toString();
+                if(!mydbHelper.CheckExistDEVICE_ID(DEVICE_ID)){
+                    Toast.makeText(MainActivity.this, "無此設備代碼", Toast.LENGTH_SHORT).show();
                 }else{
+                    SPS_ID=mydbHelper.GetDeviceSPS_ID(DEVICE_ID);
                     Intent intenting = new Intent();
                     intenting.setClass(MainActivity.this, AfterLogin.class);
-                    intenting.putExtra("SPS_ID",SPS_ID_Edt.getText().toString());//傳遞SPS_ID給登入後的葉面
+                    intenting.putExtra("DEVICE_ID",DEVICE_ID);//傳遞DEVICE_ID給登入後的頁面
+                    intenting.putExtra("SPS_ID",SPS_ID);//傳遞SPS_ID給登入後的頁面
                     startActivityForResult(intenting,0);
                     //MainActivity.this.finish();
                 }

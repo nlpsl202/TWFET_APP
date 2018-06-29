@@ -36,8 +36,8 @@ import javax.crypto.spec.SecretKeySpec;
 public class OnlineTicketsCheck extends Activity {
     private static String key="SET31275691$00000000000000000000";
     TextView ResultTxt,PeopleNumTxt;
-    String result="",DEVICE_ID,SPS_ID;
-    Button ReturnBtn;
+    String result="",SPS_ID;
+    Button ReturnBtn,HomeBtn;
 
     //SQL SERVER
     ConnectionClass connectionClass;
@@ -59,12 +59,12 @@ public class OnlineTicketsCheck extends Activity {
 
         //取得上個頁面傳來的值
         Intent intent = getIntent();
-        DEVICE_ID=intent.getStringExtra("DEVICE_ID");
         SPS_ID=intent.getStringExtra("SPS_ID");
 
         ResultTxt=(TextView) findViewById(R.id.ResultTxt);
         PeopleNumTxt=(TextView) findViewById(R.id.PeopleNumTxt);
         ReturnBtn=(Button)findViewById(R.id.ReturnBtn);
+        HomeBtn=(Button)findViewById(R.id.HomeBtn);
 
         //SQLITE
         mydbHelper = new MyDBHelper(this);
@@ -160,6 +160,13 @@ public class OnlineTicketsCheck extends Activity {
         cbMgr.addPrimaryClipChangedListener(mPrimaryClipChangedListener);
 
         ReturnBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+
+        HomeBtn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
                 finish();

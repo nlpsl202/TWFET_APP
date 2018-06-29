@@ -30,7 +30,7 @@ public class OfflineTickets extends Activity {
     private static final String key="SET31275691$00000000000000000000";
     TextView ResultTxt,ResultTxt2;
     String result="",DEVICE_ID,SPS_ID,TICKET_NO,TK_CODE;
-    Button ReturnBtn;
+    Button ReturnBtn,HomeBtn;
     LinearLayout FailedLayout;
 
     //剪貼簿
@@ -52,6 +52,7 @@ public class OfflineTickets extends Activity {
         SPS_ID = intent.getStringExtra("SPS_ID");
 
         ReturnBtn=(Button)findViewById(R.id.ReturnBtn);
+        HomeBtn=(Button)findViewById(R.id.HomeBtn);
         ResultTxt=(TextView) findViewById(R.id.ResultTxt);
         ResultTxt2=(TextView) findViewById(R.id.ResultTxt2);
         FailedLayout=(LinearLayout) findViewById(R.id.FailedLayout);
@@ -93,7 +94,7 @@ public class OfflineTickets extends Activity {
                         ResultArray[1] = TICKET_NO;
                         ResultArray[2] = SPS_ID;
                         ResultArray[3] = "I";
-                        ResultArray[4] = DEVICE_ID;
+                        ResultArray[4] = SPS_ID+DEVICE_ID.replace('G','H');
                         ResultArray[5] = TK_CODE;
                         ResultArray[6] = qr;
                         ResultArray[7] = df2.format(c.getTime());
@@ -114,6 +115,13 @@ public class OfflineTickets extends Activity {
         cbMgr.addPrimaryClipChangedListener(mPrimaryClipChangedListener);
 
         ReturnBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+
+        HomeBtn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
                 finish();

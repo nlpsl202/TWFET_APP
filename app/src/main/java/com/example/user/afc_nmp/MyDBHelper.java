@@ -596,6 +596,18 @@ public class MyDBHelper extends SQLiteOpenHelper {
         return bol;
     }
 
+    //檢查設備代碼是否存在
+    public boolean CheckExistDEVICE_ID(String DEVICE_ID){
+        boolean bol=false;
+        //使用 rawQuery 方法
+        Cursor cursor = super.getReadableDatabase().rawQuery("select * from cStationConf where DEVICE_ID=? and DeviceTypeID ='03'", new String[]{DEVICE_ID});
+        while (cursor.moveToNext()) {
+            bol=true;
+        }
+        cursor.close();
+        return bol;
+    }
+
     //更新手持所屬園區
     public void UpdateDeviceSPS_ID(String SPS_ID,String DEVICE_ID){
         Connection con = ConnectionClass.CONN();
@@ -606,5 +618,23 @@ public class MyDBHelper extends SQLiteOpenHelper {
         }catch(Exception ex){
             WriteLog.appendLog("MyDBHelper.java/UpdateDeviceSPS_ID/Exception:" + ex.toString());
         }
+    }
+
+    //取得閘門所屬園區
+    public String GetDeviceSPS_ID(String DEVICE_ID){
+        String SPS_ID="";
+        Connection con = ConnectionClass.CONN();
+        String query = "select SPS_ID from cStationConf where DEVICE_ID='" +DEVICE_ID+"'";
+        try{
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next())
+            {
+                SPS_ID=rs.getString("SPS_ID");
+            }
+        }catch(Exception ex){
+            WriteLog.appendLog("MyDBHelper.java/GetDeviceSPS_ID/Exception:" + ex.toString());
+        }
+        return SPS_ID;
     }
 }

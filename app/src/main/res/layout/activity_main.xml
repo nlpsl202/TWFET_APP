@@ -21,18 +21,18 @@
         <EditText
             android:layout_width="250dp"
             android:layout_height="wrap_content"
-            android:id="@+id/SPS_ID_Edt"
+            android:id="@+id/DEVICE_ID_Edt"
             android:background="@drawable/activity_main_input"
             android:inputType="text"
             android:paddingLeft="40dp"
-            android:hint="請掃描園區QRCODE"
+            android:hint="請掃描閘門QRCODE"
             android:layout_alignParentRight="true"/>
 
     </RelativeLayout>
 
     <Button
         android:layout_width="wrap_content"
-        android:layout_height="130dp"
+        android:layout_height="90dp"
         android:id="@+id/LoginBtn"
         android:background="@drawable/activity_main_btn_selector" />
 

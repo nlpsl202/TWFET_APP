@@ -25,7 +25,7 @@ import java.sql.Connection;
  * Created by USER on 2015/11/20.
  */
 public class OfflineExport extends Activity {
-    Button ImportBtn,ReturnBtn;
+    Button ImportBtn,ReturnBtn,HomeBtn;
     TextView ResultTxt,ResultTxt2;
     private MyDBHelper mydbHelper;
     //SQL SERVER //建立連線
@@ -42,6 +42,7 @@ public class OfflineExport extends Activity {
 
         ReturnBtn=(Button)findViewById(R.id.ReturnBtn);
         ImportBtn=(Button)findViewById(R.id.ImportBtn);
+        HomeBtn=(Button)findViewById(R.id.HomeBtn);
         ResultTxt=(TextView) findViewById(R.id.ResultTxt);
         ResultTxt2=(TextView) findViewById(R.id.ResultTxt2);
 
@@ -140,6 +141,13 @@ public class OfflineExport extends Activity {
         });
 
         ReturnBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+
+        HomeBtn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
                 finish();

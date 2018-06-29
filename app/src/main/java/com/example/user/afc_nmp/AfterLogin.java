@@ -9,14 +9,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
-import android.telephony.TelephonyManager;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
@@ -31,7 +28,7 @@ import java.sql.Connection;
 public class AfterLogin  extends Activity {
 
     Button OnlineTicketBtn,OffineTicketBtn,OfflineImportBtn,OfflineExportBtn,BluetoothConBtn,BluetoothTicketBtn;
-    TextView UserDeviceTxt,InternetStatusTxt,BluetoothStatusTxt,DeviceIdTxt;
+    TextView UserDeviceTxt,InternetStatusTxt,BluetoothStatusTxt;
     String SPS_ID,DEVICE_ID;
     private MyDBHelper mydbHelper;
     //SQL SERVER //建立連線
@@ -50,16 +47,18 @@ public class AfterLogin  extends Activity {
         UserDeviceTxt=(TextView)findViewById(R.id.UserDeviceTxt);
         InternetStatusTxt=(TextView)findViewById(R.id.InternetStatusTxt);
         BluetoothStatusTxt=(TextView)findViewById(R.id.BluetoothStatusTxt);
-        DeviceIdTxt=(TextView)findViewById(R.id.DeviceIdTxt);
 
         //取得從登入頁面傳送來的使用者帳號
         Intent intent = getIntent();
         SPS_ID = intent.getStringExtra("SPS_ID");
+        DEVICE_ID= intent.getStringExtra("DEVICE_ID");
+
+        UserDeviceTxt.setText("園區代碼：  "+SPS_ID+"\n"+"閘門代碼：  "+DEVICE_ID);
 
         //SQLITE
         mydbHelper = new MyDBHelper(this);
 
-        //取得手機資訊服務
+        /*//取得手機資訊服務
         TelephonyManager mTelManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
         //取得手機IMEI碼
         if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.READ_PHONE_STATE ) != PackageManager.PERMISSION_GRANTED ) {
@@ -69,16 +68,13 @@ public class AfterLogin  extends Activity {
         DEVICE_ID=mydbHelper.selectIMEIdeviceID(IMEI);
         if(DEVICE_ID.equals("")){
             DEVICE_ID="無法偵測";
-        }
+        }*/
 
-        //DeviceIdTxt.setText("裝置代號："+DEVICE_ID);
-        UserDeviceTxt.setText("園區代碼：  "+SPS_ID+"\n"+"裝置代號：  "+DEVICE_ID);
-
-        //執行SQL SERVER驗票SP
         connectionClass = new ConnectionClass();
         con= connectionClass.CONN();
-        //如果登入後有網路的話，則呼叫登入的SP進行資料庫登入紀錄
-        /*if(checkInternetConnect()){
+
+        /*//如果登入後有網路的話，則呼叫登入的SP進行資料庫登入紀錄
+        if(checkInternetConnect()){
             mydbHelper.executeLoginStoredProcedure(con,DEVICE_ID,SPS_ID);
         }*/
 
@@ -172,7 +168,7 @@ public class AfterLogin  extends Activity {
             }
         });
 
-        //資料匯入
+        //票券狀態查詢
         OfflineImportBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
