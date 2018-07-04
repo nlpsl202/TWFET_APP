@@ -8,6 +8,8 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.nfc.NfcAdapter;
@@ -18,6 +20,7 @@ import android.util.Base64;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,10 +40,11 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public class OnlineTickets extends Activity {
     private static final String key="SET31275691$00000000000000000000";
-    TextView ResultTxt,ResultTxt2,PeopleNumTxt;
+    TextView ResultTxt,ResultTxt2,ResultTxt3,PeopleNumTxt;
+    ImageView FtPhotoImage;
     String result="",DEVICE_ID,SPS_ID;
     Button ReturnBtn,HomeBtn;
-    LinearLayout FailedLayout;
+    LinearLayout FailedLayout,wifiLayout,rfidLayout;
 
     //SQL SERVER
     ConnectionClass connectionClass;
@@ -53,10 +57,10 @@ public class OnlineTickets extends Activity {
     private ClipboardManager cbMgr;
     private ClipboardManager.OnPrimaryClipChangedListener mPrimaryClipChangedListener;
 
-    //private NfcAdapter nfcAdapter;
-    //private PendingIntent mPendingIntent;
-    NfcAdapter mAdapter;
+    //RFID
+    NfcAdapter mNfcAdapter;
     PendingIntent mPendingIntent;
+    Bitmap bitmap;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -74,7 +78,11 @@ public class OnlineTickets extends Activity {
         ReturnBtn=(Button)findViewById(R.id.ReturnBtn);
         HomeBtn=(Button)findViewById(R.id.HomeBtn);
         ResultTxt2=(TextView) findViewById(R.id.ResultTxt2);
+        ResultTxt3=(TextView) findViewById(R.id.ResultTxt3);
         FailedLayout=(LinearLayout) findViewById(R.id.FailedLayout);
+        wifiLayout=(LinearLayout) findViewById(R.id.wifiLayout);
+        rfidLayout=(LinearLayout) findViewById(R.id.rfidLayout);
+        FtPhotoImage=(ImageView) findViewById(R.id.FtPhotoImage);
 
         //SQLITE
         mydbHelper = new MyDBHelper(this);
@@ -95,12 +103,17 @@ public class OnlineTickets extends Activity {
             }
         });
 
+        FailedLayout.setVisibility(View.GONE);
+        wifiLayout.setVisibility(View.GONE);
+        rfidLayout.setVisibility(View.GONE);
+
         //掃描驗票
         cbMgr=(ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
         mPrimaryClipChangedListener =new ClipboardManager.OnPrimaryClipChangedListener(){
             public void onPrimaryClipChanged() {
+                wifiLayout.setVisibility(View.VISIBLE);
+                rfidLayout.setVisibility(View.GONE);
                 try{
-                    //Toast.makeText(OnlineTickets.this, "OnlineTickets", Toast.LENGTH_SHORT).show();
                     setVibrate(100);
                     String qr=cbMgr.getPrimaryClip().getItemAt(0).getText().toString();
                     String a=qr.substring(0,qr.length()-16);
@@ -112,18 +125,23 @@ public class OnlineTickets extends Activity {
 
                     connectionClass = new ConnectionClass();
                     con= connectionClass.CONN();
-                    CallableStatement cstmt = con.prepareCall("{ call dbo.SP_GATE_CHKCMD(?,?,?,?,?,?,?)}");
+                    CallableStatement cstmt = con.prepareCall("{ call dbo.SP_GATE_CHKCMD(?,?,?,?,?,?,?,?,?,?,?,?)}");
                     cstmt.setString(1,TICKET_NO);
                     cstmt.setString(2,SPS_ID+DEVICE_ID.replace('G','H'));
                     cstmt.setString(3,SPS_ID);
                     cstmt.setString(4,"");
-                    cstmt.registerOutParameter(5, java.sql.Types.VARCHAR);
+                    cstmt.setString(5,"");
                     cstmt.registerOutParameter(6, java.sql.Types.VARCHAR);
                     cstmt.registerOutParameter(7, java.sql.Types.VARCHAR);
+                    cstmt.registerOutParameter(8, java.sql.Types.VARCHAR);
+                    cstmt.registerOutParameter(9, java.sql.Types.VARCHAR);
+                    cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
+                    cstmt.registerOutParameter(11, java.sql.Types.VARCHAR);
+                    cstmt.registerOutParameter(12, java.sql.Types.VARCHAR);
                     cstmt.execute();
-                    String RETURN_MSG = cstmt.getString(5);
-                    String TK_NAME = cstmt.getString(6);
-                    String RETURN_MSG_DATETIME = cstmt.getString(7);
+                    String RETURN_MSG = cstmt.getString(6);
+                    String TK_NAME = cstmt.getString(7);
+                    //String RETURN_MSG_DATETIME = cstmt.getString(8);
                     cstmt.close();
 
                     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -131,11 +149,9 @@ public class OnlineTickets extends Activity {
                     Calendar c = Calendar.getInstance();
 
                     String[] ResultArray=new String[10];
-                    FailedLayout.setVisibility(View.VISIBLE);
                     if (RETURN_MSG.indexOf("OPEN") > -1) {
                         FailedLayout.setVisibility(View.GONE);
                         setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +TK_NAME+ "\n\n票券入場紀錄\n\n"+df.format(c.getTime()));
-                        //ResultTxt.setTextColor(Color.BLUE);
                         ResultArray[0]="A";
                         ResultArray[1]=TICKET_NO;
                         ResultArray[2]=SPS_ID;
@@ -147,43 +163,68 @@ public class OnlineTickets extends Activity {
                         ResultArray[8]="";
                         ResultArray[9]=getDateTime();
                         mydbHelper.InsertToSQLiteUltraLight03(ResultArray, "OK");
-                    }else if(RETURN_MSG.indexOf("逾時") > -1){
+                    }else{
                         FailedLayout.setVisibility(View.VISIBLE);
-                        //setResultText(result = "票券狀態：驗票失敗，" +RETURN_MSG+ "\n\n票券號碼：" +TICKET_NO+ "\n\n票券種類：" +TK_NAME);
                         setResultText(result = "票券狀態    ");
                         setResultText2(result = RETURN_MSG);
-                        //ResultTxt.setTextColor(Color.RED);
-                    }else if(RETURN_MSG.indexOf("已入場") > -1){
-                        FailedLayout.setVisibility(View.VISIBLE);
-                        //setResultText(result = "票券狀態：驗票失敗，" +RETURN_MSG+ "\n\n票券號碼："+TICKET_NO + "\n\n票券種類："+TK_NAME + "\n\n票券入場紀錄："+RETURN_MSG_DATETIME);
-                        setResultText(result = "票券狀態    ");
-                        setResultText2(result = RETURN_MSG);
-                        //ResultTxt.setTextColor(Color.RED);
-                    }else if(RETURN_MSG.indexOf("作廢") > -1){
-                        FailedLayout.setVisibility(View.VISIBLE);
-                        //setResultText(result = "票券狀態：驗票失敗，" +RETURN_MSG);
-                        setResultText(result = "票券狀態    ");
-                        setResultText2(result = RETURN_MSG);
-                        //ResultTxt.setTextColor(Color.RED);
-                    }else if(RETURN_MSG.indexOf("無此售票") > -1){
-                        FailedLayout.setVisibility(View.VISIBLE);
-                        //setResultText(result = "票券狀態：驗票失敗，" +RETURN_MSG);
-                        setResultText(result = "票券狀態    ");
-                        setResultText2(result = RETURN_MSG);
-                        //ResultTxt.setTextColor(Color.RED);
-                    }else if(RETURN_MSG.indexOf("非法票券") > -1){
-                        FailedLayout.setVisibility(View.VISIBLE);
-                        //setResultText(result = "票券狀態：驗票失敗，非花博票券條碼");
-                        setResultText(result = "票券狀態    ");
-                        setResultText2(result = RETURN_MSG);
-                        //ResultTxt.setTextColor(Color.RED);
                     }
                 }catch(Exception ex){
-                    FailedLayout.setVisibility(View.VISIBLE);
-                    //setResultText(result = "票券狀態：驗票失敗，非花博票券條碼");
-                    setResultText(result = "票券狀態    ");
-                    setResultText2(result = "非花博票券條碼！");
-                    //ResultTxt.setTextColor(Color.RED);
+                    try {
+                        String qr=cbMgr.getPrimaryClip().getItemAt(0).getText().toString();
+                        connectionClass = new ConnectionClass();
+                        con= connectionClass.CONN();
+                        CallableStatement cstmt = con.prepareCall("{ call dbo.SP_GATE_CHKCMD(?,?,?,?,?,?,?,?,?,?,?,?)}");
+                        cstmt.setString(1,qr);
+                        cstmt.setString(2,SPS_ID+DEVICE_ID.replace('G','H'));
+                        cstmt.setString(3,SPS_ID);
+                        cstmt.setString(4,"");
+                        cstmt.setString(5,"");
+                        cstmt.registerOutParameter(6, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(7, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(8, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(9, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(11, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(12, java.sql.Types.VARCHAR);
+                        cstmt.execute();
+                        String RETURN_MSG = cstmt.getString(6);
+                        String TICKET_NO=cstmt.getString(10);
+                        String TK_NAME = cstmt.getString(7);
+                        String TK_CODE = cstmt.getString(9);
+                        cstmt.close();
+
+                        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+                        SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
+                        Calendar c = Calendar.getInstance();
+
+                        String[] ResultArray=new String[10];
+                        FailedLayout.setVisibility(View.VISIBLE);
+                        wifiLayout.setVisibility(View.VISIBLE);
+                        rfidLayout.setVisibility(View.GONE);
+                        if (RETURN_MSG.indexOf("OPEN") > -1) {
+                            FailedLayout.setVisibility(View.GONE);
+                            setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +TK_NAME+ "\n\n票券入場紀錄\n\n"+df.format(c.getTime()));
+                            ResultArray[0]="A";
+                            ResultArray[1]=TICKET_NO;
+                            ResultArray[2]=SPS_ID;
+                            ResultArray[3]="I";
+                            ResultArray[4]=SPS_ID+DEVICE_ID.replace('G','H');
+                            ResultArray[5]=TK_CODE;
+                            ResultArray[6]=qr;
+                            ResultArray[7]=df2.format(c.getTime());
+                            ResultArray[8]="";
+                            ResultArray[9]=getDateTime();
+                            mydbHelper.InsertToSQLiteUltraLight03(ResultArray, "OK");
+                        }else{
+                            FailedLayout.setVisibility(View.VISIBLE);
+                            setResultText(result = "票券狀態    ");
+                            setResultText2(result = RETURN_MSG);
+                        }
+                    }catch(Exception e) {
+                        FailedLayout.setVisibility(View.VISIBLE);
+                        setResultText(result = "票券狀態    ");
+                        setResultText2(result = "非花博票券條碼！");
+                    }
                 }
             }
         };
@@ -209,8 +250,9 @@ public class OnlineTickets extends Activity {
         intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(connectionReceiver, intentFilter);
 
-        mAdapter = NfcAdapter.getDefaultAdapter(this);
-        if (mAdapter == null) {
+        //RFID
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (mNfcAdapter == null) {
             //nfc not support your device.
             return;
         }
@@ -221,44 +263,7 @@ public class OnlineTickets extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        mAdapter.enableForegroundDispatch(this, mPendingIntent, null, null);
-        /*nfcAdapter.enableForegroundDispatch(this, mPendingIntent, null, null);
-        Intent intent = getIntent();
-        String action = intent.getAction();
-
-        if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action)) {
-            Toast.makeText(this,
-                    this.ByteArrayToHexString(getIntent().getByteArrayExtra(NfcAdapter.EXTRA_ID)),
-                    Toast.LENGTH_SHORT).show();
-
-            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-            if(tag == null){
-                setResultText(result = "tag == null");
-            }else{
-                String tagInfo = tag.toString() + "\n";
-
-                tagInfo += "\nTag Id: \n";
-                byte[] tagId = tag.getId();
-                tagInfo += "length = " + tagId.length +"\n";
-                for(int i=0; i<tagId.length; i++){
-                    tagInfo += Integer.toHexString(tagId[i] & 0xFF) + " ";
-                }
-                tagInfo += "\n";
-
-                String[] techList = tag.getTechList();
-                tagInfo += "\nTech List\n";
-                tagInfo += "length = " + techList.length +"\n";
-                for(int i=0; i<techList.length; i++){
-                    tagInfo += techList[i] + "\n";
-                }
-
-                setResultText(result = tagInfo);
-            }
-        }else{
-            Toast.makeText(this,
-                    "onResume() : " + action,
-                    Toast.LENGTH_SHORT).show();
-        }*/
+        mNfcAdapter.enableForegroundDispatch(this, mPendingIntent, null, null);
     }
 
     @Override
@@ -270,18 +275,77 @@ public class OnlineTickets extends Activity {
         String tagNo="";
         byte[] tagId = tag.getId();
         for(int i=0; i<tagId.length; i++){
-            tagNo += Integer.toHexString(tagId[i] & 0xFF) + " ";
+            if(Integer.toHexString(tagId[i] & 0xFF).length()<2){
+                tagNo +="0";
+            }
+            tagNo += Integer.toHexString(tagId[i] & 0xFF);
         }
-        setResultText(result = tagNo);
-        //Start for Camera
+
+        SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
+        Calendar c = Calendar.getInstance();
+        String[] ResultArray=new String[10];
+        try{
+            connectionClass = new ConnectionClass();
+            con= connectionClass.CONN();
+            CallableStatement cstmt = con.prepareCall("{ call dbo.SP_GATE_CHKCMD(?,?,?,?,?,?,?,?,?,?,?,?)}");
+            cstmt.setString(1,"");
+            cstmt.setString(2,SPS_ID+DEVICE_ID.replace('G','H'));
+            cstmt.setString(3,SPS_ID);
+            cstmt.setString(4,tagNo.toUpperCase());
+            cstmt.setString(5,"");
+            cstmt.registerOutParameter(6, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(7, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(8, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(9, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(11, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(12, java.sql.Types.VARCHAR);
+            cstmt.execute();
+            String RETURN_MSG = cstmt.getString(6);
+            String TK_NAME = cstmt.getString(7);
+            String TICKET_NO = cstmt.getString(11);
+            String FT_NAME=cstmt.getString(12);
+            byte[] fileBytes=mydbHelper.GetByte(tagNo.toUpperCase().replace(" ",""));
+            cstmt.close();
+            if (RETURN_MSG.indexOf("OPEN") > -1) {
+                wifiLayout.setVisibility(View.GONE);
+                rfidLayout.setVisibility(View.VISIBLE);
+                bitmap = BitmapFactory.decodeByteArray(fileBytes, 0, fileBytes.length);
+                FtPhotoImage.setImageBitmap(bitmap);
+                ResultTxt3.setText("姓　　名    "+FT_NAME+"\n\n票券狀態    驗票成功" + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +TK_NAME);
+                ResultArray[0]="A";
+                ResultArray[1]=TICKET_NO;
+                ResultArray[2]=SPS_ID;
+                ResultArray[3]="I";
+                ResultArray[4]=SPS_ID+DEVICE_ID.replace('G','H');
+                ResultArray[5]=TICKET_NO.substring(0,2);
+                ResultArray[6]="";
+                ResultArray[7]=df2.format(c.getTime());
+                ResultArray[8]="";
+                ResultArray[9]=getDateTime();
+                mydbHelper.InsertToSQLiteUltraLight03(ResultArray, "OK");
+            }else{
+                wifiLayout.setVisibility(View.VISIBLE);
+                rfidLayout.setVisibility(View.GONE);
+                FailedLayout.setVisibility(View.VISIBLE);
+                setResultText(result = "票券狀態    ");
+                setResultText2(result = RETURN_MSG);
+            }
+        }catch(Exception ex){
+            wifiLayout.setVisibility(View.VISIBLE);
+            rfidLayout.setVisibility(View.GONE);
+            FailedLayout.setVisibility(View.VISIBLE);
+            setResultText(result = "票券狀態    ");
+            setResultText2(result = "非花博票券條碼！");
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
-        if (mAdapter != null) {
-            mAdapter.disableForegroundDispatch(this);
+        if (mNfcAdapter != null) {
+            mNfcAdapter.disableForegroundDispatch(this);
         }
     }
 
@@ -345,19 +409,6 @@ public class OnlineTickets extends Activity {
 
     //監控網路狀態
     private final BroadcastReceiver connectionReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            ConnectivityManager connectMgr = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-            NetworkInfo mNetworkInfo = connectMgr.getActiveNetworkInfo();
-            if (mNetworkInfo == null) {
-                Toast.makeText(OnlineTickets.this, "連線中斷", Toast.LENGTH_SHORT).show();
-                finish();
-            }
-        }
-    };
-
-    //RFID
-    private final BroadcastReceiver RfidReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             ConnectivityManager connectMgr = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);

@@ -1,13 +1,19 @@
 package com.example.user.afc_nmp;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
@@ -39,6 +45,9 @@ public class OfflineTickets extends Activity {
     //SQLITE
     private MyDBHelper mydbHelper;
 
+    //RFID
+    NfcAdapter mNfcAdapter;
+    PendingIntent mPendingIntent;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -65,7 +74,6 @@ public class OfflineTickets extends Activity {
         mPrimaryClipChangedListener=new ClipboardManager.OnPrimaryClipChangedListener() {
             public void onPrimaryClipChanged() {
                 try {
-                    //Toast.makeText(OfflineTickets.this, "OfflineTickets", Toast.LENGTH_SHORT).show();
                     setVibrate(100);
                     String qr = cbMgr.getPrimaryClip().getItemAt(0).getText().toString();
                     String a = qr.substring(0, qr.length() - 16);
@@ -127,11 +135,73 @@ public class OfflineTickets extends Activity {
                 finish();
             }
         });
+
+        //RFID
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (mNfcAdapter == null) {
+            //nfc not support your device.
+            return;
+        }
+        mPendingIntent = PendingIntent.getActivity(this, 0, new Intent(this,
+                getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
     }//END ONCREATE
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mNfcAdapter.enableForegroundDispatch(this, mPendingIntent, null, null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent){
+        getTagInfo(intent);
+    }
+    private void getTagInfo(Intent intent) {
+        Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+        String tagNo="";
+        byte[] tagId = tag.getId();
+        for(int i=0; i<tagId.length; i++){
+            if(Integer.toHexString(tagId[i] & 0xFF).length()<2){
+                tagNo +="0";
+            }
+            tagNo += Integer.toHexString(tagId[i] & 0xFF);
+        }
+
+        try{
+            setVibrate(100);
+            String RETURN_MSG="";
+            if(tagNo.length()==14){
+                RETURN_MSG="可入場";
+            }
+            if (RETURN_MSG.indexOf("可入") > -1) {
+                setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券種類    全期間票");
+            }else{
+                ResultTxt.setTextColor(Color.BLACK);
+                String text = "票券狀態    非花博票券條碼！";
+                Spannable spannable = new SpannableString(text);
+                spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 8+RETURN_MSG.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+            }
+        }catch(Exception ex){
+            ResultTxt.setTextColor(Color.BLACK);
+            String text = "票券狀態    非花博票券條碼！";
+            Spannable spannable = new SpannableString(text);
+            spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 16, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+        }
+    }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if (mNfcAdapter != null) {
+            mNfcAdapter.disableForegroundDispatch(this);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
         cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
     }
 

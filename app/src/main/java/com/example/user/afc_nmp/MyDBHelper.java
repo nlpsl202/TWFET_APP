@@ -637,4 +637,21 @@ public class MyDBHelper extends SQLiteOpenHelper {
         }
         return SPS_ID;
     }
+
+    public byte[] GetByte(String FT_SERIALNO){
+        byte[] image=null;
+        Connection con = ConnectionClass.CONN();
+        String query = "select FT_S_IMAGE from rFullTermInformation where FT_SERIALNO='"+FT_SERIALNO+"'";
+        try{
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next())
+            {
+                image=rs.getBytes(1);
+            }
+        }catch(Exception ex){
+            WriteLog.appendLog("MyDBHelper.java/GetDeviceSPS_ID/Exception:" + ex.toString());
+        }
+        return image;
+    }
 }

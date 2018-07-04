@@ -1,6 +1,7 @@
 package com.example.user.afc_nmp;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ClipboardManager;
@@ -10,6 +11,8 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.text.Spannable;
@@ -50,6 +53,9 @@ public class OnlineTicketsCheck extends Activity {
     private ClipboardManager cbMgr;
     private ClipboardManager.OnPrimaryClipChangedListener mPrimaryClipChangedListener;
 
+    //RFID
+    NfcAdapter mNfcAdapter;
+    PendingIntent mPendingIntent;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -87,7 +93,6 @@ public class OnlineTicketsCheck extends Activity {
         mPrimaryClipChangedListener =new ClipboardManager.OnPrimaryClipChangedListener(){
             public void onPrimaryClipChanged() {
                 try{
-                    //Toast.makeText(OnlineTicketsCheck.this, "OnlineTicketsCheck", Toast.LENGTH_SHORT).show();
                     setVibrate(100);
                     String qr=cbMgr.getPrimaryClip().getItemAt(0).getText().toString();
                     String a=qr.substring(0,qr.length()-16);
@@ -95,65 +100,78 @@ public class OnlineTicketsCheck extends Activity {
                     byte[] descryptBytes=decryptAES(iv.getBytes("UTF-8"),key.getBytes("UTF-8"), Base64.decode(a, Base64.DEFAULT));
                     String getdata = new String(descryptBytes);
                     String TICKET_NO=getdata.split("@")[4];
-                    String TK_CODE=getdata.split("@")[5];
                     connectionClass = new ConnectionClass();
                     con= connectionClass.CONN();
-                    CallableStatement cstmt = con.prepareCall("{ call dbo.SP_TVM_TicketStateQuery(?,?,?,?,?)}");
+                    CallableStatement cstmt = con.prepareCall("{ call dbo.SP_TVM_TicketStateQuery(?,?,?,?,?,?,?,?)}");
                     cstmt.setString(1,TICKET_NO);
-                    cstmt.setString(2,qr);
-                    cstmt.setString(3,SPS_ID);
+                    cstmt.setString(2,SPS_ID);
+                    cstmt.setString(3,"");
                     cstmt.registerOutParameter(4, java.sql.Types.VARCHAR);
                     cstmt.registerOutParameter(5, java.sql.Types.VARCHAR);
+                    cstmt.registerOutParameter(6, java.sql.Types.VARCHAR);
+                    cstmt.registerOutParameter(7, java.sql.Types.VARCHAR);
+                    cstmt.registerOutParameter(8, java.sql.Types.VARCHAR);
                     cstmt.execute();
                     String RETURN_MSG = cstmt.getString(4);
-                    String TK_NAME = mydbHelper.GetTKName(TK_CODE);
                     String RETURN_MSG_DATETIME = cstmt.getString(5);
+                    String TK_NAME = cstmt.getString(6);
                     cstmt.close();
                     if (RETURN_MSG.indexOf("可入") > -1) {
                         setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME);
-                        //ResultTxt.setTextColor(Color.BLACK);
-                    }else if(RETURN_MSG.indexOf("逾時") > -1){
-                        setResultText(result = "票券狀態    " + RETURN_MSG);
-                        //ResultTxt.setTextColor(Color.RED);
-                    }else if(RETURN_MSG.indexOf("已入場") > -1){
+                    }else{
                         ResultTxt.setTextColor(Color.BLACK);
-                        String text = "票券狀態    "+RETURN_MSG+"\n\n票券號碼    "+TICKET_NO+"\n\n票券種類    "+TK_NAME+"\n\n票券入場紀錄\n\n"+RETURN_MSG_DATETIME;
-                        Spannable spannable = new SpannableString(text);
-                        spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 8+RETURN_MSG.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
-                    }else if(RETURN_MSG.indexOf("作廢") > -1){
-                        //setResultText(result = "票券狀態    " + RETURN_MSG);
-                        //ResultTxt.setTextColor(Color.RED);
-                        ResultTxt.setTextColor(Color.BLACK);
-                        String text = "票券狀態    "+RETURN_MSG;
-                        Spannable spannable = new SpannableString(text);
-                        spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 8+RETURN_MSG.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
-                    }else if(RETURN_MSG.indexOf("無此售票") > -1){
-                        //setResultText(result = "票券狀態    " + RETURN_MSG);
-                        //ResultTxt.setTextColor(Color.RED);
-                        ResultTxt.setTextColor(Color.BLACK);
-                        String text = "票券狀態    "+RETURN_MSG;
-                        Spannable spannable = new SpannableString(text);
-                        spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 8+RETURN_MSG.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
-                    }else if(RETURN_MSG.indexOf("非法票券") > -1){
-                        //setResultText(result = "票券狀態    " + RETURN_MSG);
-                        //ResultTxt.setTextColor(Color.RED);
-                        ResultTxt.setTextColor(Color.BLACK);
-                        String text = "票券狀態    "+RETURN_MSG;
+                        String text="";
+                        if(RETURN_MSG.indexOf("已入場") > -1){
+                            text = "票券狀態    "+RETURN_MSG+"\n\n票券號碼    "+TICKET_NO+"\n\n票券種類    "+TK_NAME+"\n\n票券入場紀錄\n\n"+RETURN_MSG_DATETIME;
+                        }else{
+                            text = "票券狀態    "+RETURN_MSG;
+                        }
                         Spannable spannable = new SpannableString(text);
                         spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 8+RETURN_MSG.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                         ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
                     }
                 }catch(Exception ex){
-                    ResultTxt.setTextColor(Color.BLACK);
-                    String text = "票券狀態    非花博票券條碼！";
-                    Spannable spannable = new SpannableString(text);
-                    spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 16, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
-                    //setResultText(result = "票券狀態    非花博票券條碼");
-                    //ResultTxt.setTextColor(Color.RED);
+                    try{
+                        String qr=cbMgr.getPrimaryClip().getItemAt(0).getText().toString();
+                        connectionClass = new ConnectionClass();
+                        con= connectionClass.CONN();
+                        CallableStatement cstmt = con.prepareCall("{ call dbo.SP_TVM_TicketStateQuery(?,?,?,?,?,?,?,?)}");
+                        cstmt.setString(1,qr);
+                        cstmt.setString(2,SPS_ID);
+                        cstmt.setString(3,"");
+                        cstmt.registerOutParameter(4, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(5, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(6, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(7, java.sql.Types.VARCHAR);
+                        cstmt.registerOutParameter(8, java.sql.Types.VARCHAR);
+                        cstmt.execute();
+                        String RETURN_MSG = cstmt.getString(4);
+                        String RETURN_MSG_DATETIME = cstmt.getString(5);
+                        String TK_NAME = cstmt.getString(6);
+                        String TICKET_NO=cstmt.getString(7);
+                        cstmt.close();
+                        if (RETURN_MSG.indexOf("可入") > -1) {
+                            setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME);
+                        }else{
+                            ResultTxt.setTextColor(Color.BLACK);
+                            String text="";
+                            if(RETURN_MSG.indexOf("已入場") > -1){
+                                text = "票券狀態    "+RETURN_MSG+"\n\n票券號碼    "+TICKET_NO+"\n\n票券種類    "+TK_NAME+"\n\n票券入場紀錄\n\n"+RETURN_MSG_DATETIME;
+                            }else{
+                                text = "票券狀態    "+RETURN_MSG;
+                            }
+                            Spannable spannable = new SpannableString(text);
+                            spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 8+RETURN_MSG.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+                        }
+                    }
+                    catch(Exception x){
+                        ResultTxt.setTextColor(Color.BLACK);
+                        String text = "票券狀態    非花博票券條碼！";
+                        Spannable spannable = new SpannableString(text);
+                        spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 16, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+                    }
                 }
             }
         };
@@ -176,24 +194,87 @@ public class OnlineTicketsCheck extends Activity {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(connectionReceiver, intentFilter);
-        //String text = "票券狀態    已入場\n\n票券號碼    IV1234567\n\n票券種類    學生票\n\n票券入場紀錄\n\n2018-01-01 00:00:00.000";
-        //Spannable spannable = new SpannableString(text);
-        //spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 11, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        //ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
-        //ResultTxt.setText("票券狀態    "+Html.fromHtml("<font color='blue'>已入場</font>")+"\n\n奇怪");
-        //setResultText(result = "票券狀態    <font color='red'>已入場</font>\n\n票券號碼    IV1234567\n\n票券種類    學生票\n\n票券入場紀錄\n\n2018-01-01 00:00:00.000");
+
+        //RFID
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (mNfcAdapter == null) {
+            //nfc not support your device.
+            return;
+        }
+        mPendingIntent = PendingIntent.getActivity(this, 0, new Intent(this,
+                getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
     }//End ON CREATE
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mNfcAdapter.enableForegroundDispatch(this, mPendingIntent, null, null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent){
+        getTagInfo(intent);
+    }
+    private void getTagInfo(Intent intent) {
+        Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+        String tagNo="";
+        byte[] tagId = tag.getId();
+        for(int i=0; i<tagId.length; i++){
+            if(Integer.toHexString(tagId[i] & 0xFF).length()<2){
+                tagNo +="0";
+            }
+            tagNo += Integer.toHexString(tagId[i] & 0xFF);
+        }
+
+        try{
+            connectionClass = new ConnectionClass();
+            con= connectionClass.CONN();
+            CallableStatement cstmt = con.prepareCall("{ call dbo.SP_TVM_TicketStateQuery(?,?,?,?,?,?,?,?)}");
+            cstmt.setString(1,"");
+            cstmt.setString(2,SPS_ID);
+            cstmt.setString(3,tagNo.toUpperCase());
+            cstmt.registerOutParameter(4, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(5, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(6, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(7, java.sql.Types.VARCHAR);
+            cstmt.registerOutParameter(8, java.sql.Types.VARCHAR);
+            cstmt.execute();
+            String RETURN_MSG = cstmt.getString(4);
+            String TK_NAME = cstmt.getString(6);
+            String TICKET_NO=cstmt.getString(7);
+            String FT_NAME=cstmt.getString(8);
+            cstmt.close();
+            if (RETURN_MSG.indexOf("可入") > -1) {
+                setResultText(result = "姓　　名    "+FT_NAME+"\n\n票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME);
+            }else{
+                ResultTxt.setTextColor(Color.BLACK);
+                String text = "票券狀態    "+RETURN_MSG;
+                Spannable spannable = new SpannableString(text);
+                spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 8+RETURN_MSG.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+            }
+        }catch(Exception ex){
+            ResultTxt.setTextColor(Color.BLACK);
+            String text = "票券狀態    非花博票券條碼！";
+            Spannable spannable = new SpannableString(text);
+            spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 16, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+        }
+    }
 
     @Override
     protected void onPause() {
         super.onPause();
-        cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
+        if (mNfcAdapter != null) {
+            mNfcAdapter.disableForegroundDispatch(this);
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(connectionReceiver);
+        cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
     }
 
     public static byte[] decryptAES (byte[] ivBytes, byte[] keyBytes,byte[] textBytes) {
