@@ -77,13 +77,12 @@ public class MainActivity extends Activity {
                 if(!mydbHelper.CheckExistDEVICE_ID(DEVICE_ID)){
                     Toast.makeText(MainActivity.this, "無此設備代碼", Toast.LENGTH_SHORT).show();
                 }else{
-                    SPS_ID=mydbHelper.GetDeviceSPS_ID(DEVICE_ID);
+                    SPS_ID=mydbHelper.GetDeviceOfflineSPS_ID(DEVICE_ID);
                     Intent intenting = new Intent();
                     intenting.setClass(MainActivity.this, AfterLogin.class);
                     intenting.putExtra("DEVICE_ID",DEVICE_ID);//傳遞DEVICE_ID給登入後的頁面
                     intenting.putExtra("SPS_ID",SPS_ID);//傳遞SPS_ID給登入後的頁面
                     startActivityForResult(intenting,0);
-                    //MainActivity.this.finish();
                 }
             }
         });//END BTNLOGIN

@@ -11,9 +11,6 @@ import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.style.ForegroundColorSpan;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
@@ -42,6 +39,7 @@ public class OfflineTickets extends Activity {
     //剪貼簿
     private ClipboardManager cbMgr;
     private ClipboardManager.OnPrimaryClipChangedListener mPrimaryClipChangedListener;
+
     //SQLITE
     private MyDBHelper mydbHelper;
 
@@ -51,9 +49,7 @@ public class OfflineTickets extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        //requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
         setContentView(R.layout.offline_tickets);
-        //getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.titlebar);
 
         //接收上個頁面傳來的值
         Intent intent = getIntent();
@@ -86,18 +82,15 @@ public class OfflineTickets extends Activity {
                     SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
                     SimpleDateFormat df3 = new SimpleDateFormat("yyyy-MM-dd");
                     Calendar c = Calendar.getInstance();
-                    String[] ResultArray = new String[10];
+                    String[] ResultArray = new String[11];
                     if (mydbHelper.IsTICKETNOexist(TICKET_NO, SPS_ID, df3.format(c.getTime()))) {
                         FailedLayout.setVisibility(View.VISIBLE);
                         setResultText(result = "票券狀態    ");
                         setResultText2(result = "此票券已入場！");
                         ResultTxt2.setTextColor(Color.RED);
-                        //setResultText(result = "票券狀態：驗票失敗，此票券已入場" + "\n\n票券號碼：" + TICKET_NO + "\n\n票券種類：" + mydbHelper.GetTKName(TK_CODE) + "\n\n票券入場紀錄：" + mydbHelper.selectUltraLight03ENTER_DT(TICKET_NO, SPS_ID));
-                        //ResultTxt.setTextColor(Color.RED);
                     } else {
                         FailedLayout.setVisibility(View.GONE);
                         setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " + TICKET_NO + "\n\n票券種類    " + mydbHelper.GetTKName(TK_CODE) + "\n\n票券入場紀錄\n\n" + df.format(c.getTime()));
-                        //ResultTxt.setTextColor(Color.BLUE);
                         ResultArray[0] = "A";
                         ResultArray[1] = TICKET_NO;
                         ResultArray[2] = SPS_ID;
@@ -108,15 +101,51 @@ public class OfflineTickets extends Activity {
                         ResultArray[7] = df2.format(c.getTime());
                         ResultArray[8] = "";
                         ResultArray[9] = getDateTime();
+                        ResultArray[10] = "";
                         mydbHelper.InsertToSQLiteUltraLight03(ResultArray, "");
                     }
-                    //Toast.makeText(OfflineTickets.this,new String(descryptBytes), Toast.LENGTH_SHORT).show();
                 } catch (Exception ex) {
-                    FailedLayout.setVisibility(View.VISIBLE);
-                    setResultText(result = "票券狀態    ");
-                    setResultText2(result = "非花博票券條碼！");
-                    ResultTxt2.setTextColor(Color.RED);
-                    //Toast.makeText(OfflineTickets.this, "非花博票券條碼", Toast.LENGTH_SHORT).show();
+                    try {
+                        String qr = cbMgr.getPrimaryClip().getItemAt(0).getText().toString();
+                        SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
+                        SimpleDateFormat df3 = new SimpleDateFormat("yyyy-MM-dd");
+                        Calendar c = Calendar.getInstance();
+                        String[] ResultArray = new String[11];
+                        if (qr.length()==15) {
+                            if (mydbHelper.IsTKQRCODEexist(qr, SPS_ID, df3.format(c.getTime()))) {
+                                FailedLayout.setVisibility(View.VISIBLE);
+                                setResultText(result = "票券狀態    ");
+                                setResultText2(result = "此票券已入場！");
+                                ResultTxt2.setTextColor(Color.RED);
+                            }else{
+                                FailedLayout.setVisibility(View.GONE);
+                                setResultText(result = "票券狀態    驗票成功");
+                                ResultArray[0] = "A";
+                                ResultArray[1] = "";
+                                ResultArray[2] = SPS_ID;
+                                ResultArray[3] = "I";
+                                ResultArray[4] = SPS_ID+DEVICE_ID.replace('G','H');
+                                ResultArray[5] = "";
+                                ResultArray[6] = qr;
+                                ResultArray[7] = df2.format(c.getTime());
+                                ResultArray[8] = "";
+                                ResultArray[9] = getDateTime();
+                                ResultArray[10] = "";
+                                mydbHelper.InsertToSQLiteUltraLight03(ResultArray, "");
+                            }
+                        } else {
+                            FailedLayout.setVisibility(View.VISIBLE);
+                            setResultText(result = "票券狀態    ");
+                            setResultText2(result = "非花博票券條碼！");
+                            ResultTxt2.setTextColor(Color.RED);
+                        }
+                    }
+                    catch (Exception e) {
+                        FailedLayout.setVisibility(View.VISIBLE);
+                        setResultText(result = "票券狀態    ");
+                        setResultText2(result = "非花博票券條碼！");
+                        ResultTxt2.setTextColor(Color.RED);
+                    }
                 }
             }
         };
@@ -169,25 +198,35 @@ public class OfflineTickets extends Activity {
 
         try{
             setVibrate(100);
-            String RETURN_MSG="";
-            if(tagNo.length()==14){
-                RETURN_MSG="可入場";
-            }
-            if (RETURN_MSG.indexOf("可入") > -1) {
-                setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券種類    全期間票");
+            SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
+            Calendar c = Calendar.getInstance();
+            String[] ResultArray = new String[11];
+            if(tagNo.length()==8){
+                FailedLayout.setVisibility(View.GONE);
+                setResultText(result = "票券狀態    驗票成功\n\n票券種類    全期間票");
+                ResultArray[0] = "A";
+                ResultArray[1] = "";
+                ResultArray[2] = SPS_ID;
+                ResultArray[3] = "I";
+                ResultArray[4] = SPS_ID+DEVICE_ID.replace('G','H');
+                ResultArray[5] = "";
+                ResultArray[6] = "";
+                ResultArray[7] = df2.format(c.getTime());
+                ResultArray[8] = "";
+                ResultArray[9] = getDateTime();
+                ResultArray[10] = tagNo;
+                mydbHelper.InsertToSQLiteUltraLight03(ResultArray, "");
             }else{
-                ResultTxt.setTextColor(Color.BLACK);
-                String text = "票券狀態    非花博票券條碼！";
-                Spannable spannable = new SpannableString(text);
-                spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 8+RETURN_MSG.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+                FailedLayout.setVisibility(View.VISIBLE);
+                setResultText(result = "票券狀態    ");
+                setResultText2(result = "非花博票券條碼！");
+                ResultTxt2.setTextColor(Color.RED);
             }
         }catch(Exception ex){
-            ResultTxt.setTextColor(Color.BLACK);
-            String text = "票券狀態    非花博票券條碼！";
-            Spannable spannable = new SpannableString(text);
-            spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 16, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+            FailedLayout.setVisibility(View.VISIBLE);
+            setResultText(result = "票券狀態    ");
+            setResultText2(result = "非花博票券條碼！");
+            ResultTxt2.setTextColor(Color.RED);
         }
     }
 
