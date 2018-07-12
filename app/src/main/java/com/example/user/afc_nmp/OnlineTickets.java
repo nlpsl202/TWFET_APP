@@ -127,7 +127,7 @@ public class OnlineTickets extends Activity {
                     con= connectionClass.CONN();
                     CallableStatement cstmt = con.prepareCall("{ call dbo.SP_GATE_CHKCMD(?,?,?,?,?,?,?,?,?,?,?,?)}");
                     cstmt.setString(1,TICKET_NO);
-                    cstmt.setString(2,SPS_ID+DEVICE_ID.replace('G','H'));
+                    cstmt.setString(2,DEVICE_ID.replace('G','H'));
                     cstmt.setString(3,SPS_ID);
                     cstmt.setString(4,"");
                     cstmt.setString(5,"");
@@ -156,7 +156,7 @@ public class OnlineTickets extends Activity {
                         ResultArray[1]=TICKET_NO;
                         ResultArray[2]=SPS_ID;
                         ResultArray[3]="I";
-                        ResultArray[4]=SPS_ID+DEVICE_ID.replace('G','H');
+                        ResultArray[4]=DEVICE_ID.replace('G','H');
                         ResultArray[5]=TK_CODE;
                         ResultArray[6]=qr;
                         ResultArray[7]=df2.format(c.getTime());
@@ -175,7 +175,7 @@ public class OnlineTickets extends Activity {
                         con= connectionClass.CONN();
                         CallableStatement cstmt = con.prepareCall("{ call dbo.SP_GATE_CHKCMD(?,?,?,?,?,?,?,?,?,?,?,?)}");
                         cstmt.setString(1,qr);
-                        cstmt.setString(2,SPS_ID+DEVICE_ID.replace('G','H'));
+                        cstmt.setString(2,DEVICE_ID.replace('G','H'));
                         cstmt.setString(3,SPS_ID);
                         cstmt.setString(4,"");
                         cstmt.setString(5,"");
@@ -208,7 +208,7 @@ public class OnlineTickets extends Activity {
                             ResultArray[1]=TICKET_NO;
                             ResultArray[2]=SPS_ID;
                             ResultArray[3]="I";
-                            ResultArray[4]=SPS_ID+DEVICE_ID.replace('G','H');
+                            ResultArray[4]=DEVICE_ID.replace('G','H');
                             ResultArray[5]=TK_CODE;
                             ResultArray[6]=qr;
                             ResultArray[7]=df2.format(c.getTime());
@@ -289,7 +289,7 @@ public class OnlineTickets extends Activity {
             con= connectionClass.CONN();
             CallableStatement cstmt = con.prepareCall("{ call dbo.SP_GATE_CHKCMD(?,?,?,?,?,?,?,?,?,?,?,?)}");
             cstmt.setString(1,"");
-            cstmt.setString(2,SPS_ID+DEVICE_ID.replace('G','H'));
+            cstmt.setString(2,DEVICE_ID.replace('G','H'));
             cstmt.setString(3,SPS_ID);
             cstmt.setString(4,tagNo.toUpperCase());
             cstmt.setString(5,"");
@@ -317,7 +317,7 @@ public class OnlineTickets extends Activity {
                 ResultArray[1]=TICKET_NO;
                 ResultArray[2]=SPS_ID;
                 ResultArray[3]="I";
-                ResultArray[4]=SPS_ID+DEVICE_ID.replace('G','H');
+                ResultArray[4]=DEVICE_ID.replace('G','H');
                 ResultArray[5]=TICKET_NO.substring(0,2);
                 ResultArray[6]="";
                 ResultArray[7]=df2.format(c.getTime());

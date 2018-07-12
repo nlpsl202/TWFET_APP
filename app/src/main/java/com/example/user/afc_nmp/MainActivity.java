@@ -39,11 +39,8 @@ public class MainActivity extends Activity {
         Log.d("MainActivity.java","應用程式開啟");
         WriteLog.appendLog("MainActivity.java/應用程式開啟");
 
-        //設定自訂的TITLE BAR
-        //requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
-        //getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.titlebar);
 
         //SQLite
         mydbHelper = new MyDBHelper(this);
@@ -77,7 +74,7 @@ public class MainActivity extends Activity {
                 if(!mydbHelper.CheckExistDEVICE_ID(DEVICE_ID)){
                     Toast.makeText(MainActivity.this, "無此設備代碼", Toast.LENGTH_SHORT).show();
                 }else{
-                    SPS_ID=mydbHelper.GetDeviceOfflineSPS_ID(DEVICE_ID);
+                    SPS_ID=DEVICE_ID.substring(0,4);
                     Intent intenting = new Intent();
                     intenting.setClass(MainActivity.this, AfterLogin.class);
                     intenting.putExtra("DEVICE_ID",DEVICE_ID);//傳遞DEVICE_ID給登入後的頁面

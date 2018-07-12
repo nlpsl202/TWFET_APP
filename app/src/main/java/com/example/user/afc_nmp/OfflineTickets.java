@@ -95,7 +95,7 @@ public class OfflineTickets extends Activity {
                         ResultArray[1] = TICKET_NO;
                         ResultArray[2] = SPS_ID;
                         ResultArray[3] = "I";
-                        ResultArray[4] = SPS_ID+DEVICE_ID.replace('G','H');
+                        ResultArray[4] = DEVICE_ID.replace('G','H');
                         ResultArray[5] = TK_CODE;
                         ResultArray[6] = qr;
                         ResultArray[7] = df2.format(c.getTime());
@@ -124,7 +124,7 @@ public class OfflineTickets extends Activity {
                                 ResultArray[1] = "";
                                 ResultArray[2] = SPS_ID;
                                 ResultArray[3] = "I";
-                                ResultArray[4] = SPS_ID+DEVICE_ID.replace('G','H');
+                                ResultArray[4] = DEVICE_ID.replace('G','H');
                                 ResultArray[5] = "";
                                 ResultArray[6] = qr;
                                 ResultArray[7] = df2.format(c.getTime());
@@ -208,7 +208,7 @@ public class OfflineTickets extends Activity {
                 ResultArray[1] = "";
                 ResultArray[2] = SPS_ID;
                 ResultArray[3] = "I";
-                ResultArray[4] = SPS_ID+DEVICE_ID.replace('G','H');
+                ResultArray[4] = DEVICE_ID.replace('G','H');
                 ResultArray[5] = "";
                 ResultArray[6] = "";
                 ResultArray[7] = df2.format(c.getTime());
