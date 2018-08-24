@@ -1,4 +1,4 @@
-package com.example.user.afc_nmp;
+package com.example.user.twfet_app;
 
 /**
  * Created by USER on 2015/11/17.
@@ -16,13 +16,16 @@ import java.sql.SQLException;
  * Created by USER on 2015/11/2.
  */
 public class ConnectionClass {
-
-    static String ip;
-    //String ip="210.243.86.140";
+    static String ip="172.16.30.181";
     static String classs = "net.sourceforge.jtds.jdbc.Driver";
     static String db = "TWFET_CDPS";
     static String un = "sa";
     static String password = "hokawaCdps";
+    //static String ip="192.168.10.193";
+    //static String classs = "net.sourceforge.jtds.jdbc.Driver";
+    //static String db = "TWFET_CDPS";
+    //static String un = "TWFET";
+    //static String password = "Mds31275691$";
 
 
     @SuppressLint("NewApi")

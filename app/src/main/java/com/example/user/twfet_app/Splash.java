@@ -1,9 +1,11 @@
-package com.example.user.afc_nmp;
+package com.example.user.twfet_app;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+
+import com.example.user.afc_nmp.R;
 
 public class Splash extends Activity {
 

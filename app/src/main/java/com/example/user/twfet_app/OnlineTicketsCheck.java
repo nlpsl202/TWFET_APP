@@ -1,4 +1,4 @@
-package com.example.user.afc_nmp;
+package com.example.user.twfet_app;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -8,6 +8,8 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -22,12 +24,18 @@ import android.util.Base64;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.user.afc_nmp.R;
 
 import java.security.spec.AlgorithmParameterSpec;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -38,9 +46,11 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public class OnlineTicketsCheck extends Activity {
     private static String key="SET31275691$00000000000000000000";
-    TextView ResultTxt,PeopleNumTxt;
-    String result="",SPS_ID;
+    TextView ResultTxt,ResultTxt3,PeopleNumTxt;
+    String result="",SPS_ID,text="";
     Button ReturnBtn,HomeBtn;
+    ImageView FtPhotoImage;
+    LinearLayout wifiLayout,rfidLayout;
 
     //SQL SERVER
     ConnectionClass connectionClass;
@@ -56,21 +66,24 @@ public class OnlineTicketsCheck extends Activity {
     //RFID
     NfcAdapter mNfcAdapter;
     PendingIntent mPendingIntent;
+    Bitmap bitmap;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        //requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
         setContentView(R.layout.online_tickets_check);
-        //getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.titlebar);
+
+        ResultTxt=(TextView) findViewById(R.id.ResultTxt);
+        ResultTxt3=(TextView) findViewById(R.id.ResultTxt3);
+        PeopleNumTxt=(TextView) findViewById(R.id.PeopleNumTxt);
+        ReturnBtn=(Button)findViewById(R.id.ReturnBtn);
+        HomeBtn=(Button)findViewById(R.id.HomeBtn);
+        wifiLayout=(LinearLayout) findViewById(R.id.wifiLayout);
+        rfidLayout=(LinearLayout) findViewById(R.id.rfidLayout);
+        FtPhotoImage=(ImageView) findViewById(R.id.FtPhotoImage);
 
         //取得上個頁面傳來的值
         Intent intent = getIntent();
         SPS_ID=intent.getStringExtra("SPS_ID");
-
-        ResultTxt=(TextView) findViewById(R.id.ResultTxt);
-        PeopleNumTxt=(TextView) findViewById(R.id.PeopleNumTxt);
-        ReturnBtn=(Button)findViewById(R.id.ReturnBtn);
-        HomeBtn=(Button)findViewById(R.id.HomeBtn);
 
         //SQLITE
         mydbHelper = new MyDBHelper(this);
@@ -80,25 +93,43 @@ public class OnlineTicketsCheck extends Activity {
         con= connectionClass.CONN();
 
         //查詢館內人數
-        PeopleNumTxt.setText("目前館內人數 "+mydbHelper.executePeopleNumStoredProcedure(con)+" 人");
+        PeopleNumTxt.setText("目前園內人數 "+mydbHelper.executePeopleNumStoredProcedure(con,SPS_ID)+" 人");
         PeopleNumTxt.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                PeopleNumTxt.setText("目前館內人數 "+mydbHelper.executePeopleNumStoredProcedure(con)+" 人");
+                PeopleNumTxt.setText("目前園內人數 "+mydbHelper.executePeopleNumStoredProcedure(con,SPS_ID)+" 人");
             }
         });
 
-        //掃描驗票
+        wifiLayout.setVisibility(View.GONE);
+        rfidLayout.setVisibility(View.GONE);
+
+        //掃描事件
         cbMgr=(ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
         mPrimaryClipChangedListener =new ClipboardManager.OnPrimaryClipChangedListener(){
             public void onPrimaryClipChanged() {
-                try{
+                wifiLayout.setVisibility(View.VISIBLE);
+                rfidLayout.setVisibility(View.GONE);
+                try {
                     setVibrate(100);
                     String qr=cbMgr.getPrimaryClip().getItemAt(0).getText().toString();
                     String a=qr.substring(0,qr.length()-16);
                     String iv=qr.substring(qr.length() - 16);
                     byte[] descryptBytes=decryptAES(iv.getBytes("UTF-8"),key.getBytes("UTF-8"), Base64.decode(a, Base64.DEFAULT));
                     String getdata = new String(descryptBytes);
+                    String inTime="";
+                    Calendar c = Calendar.getInstance();
+                    SimpleDateFormat df4 = new SimpleDateFormat("HHmm");
+                    if((getdata.split("@").length>=7)) {
+                        inTime=getdata.split("@")[6];
+                        if (inTime != null && !inTime.equals("") && Integer.parseInt(inTime.replace(":", "")) > Integer.parseInt(df4.format(c.getTime()))) {
+                            text = "票券狀態    未到入場時間！";
+                            Spannable spannable = new SpannableString(text);
+                            spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, text.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+                            return;
+                        }
+                    }
                     String TICKET_NO=getdata.split("@")[4];
                     connectionClass = new ConnectionClass();
                     con= connectionClass.CONN();
@@ -120,7 +151,6 @@ public class OnlineTicketsCheck extends Activity {
                         setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME);
                     }else{
                         ResultTxt.setTextColor(Color.BLACK);
-                        String text="";
                         if(RETURN_MSG.indexOf("已入場") > -1){
                             text = "票券狀態    "+RETURN_MSG+"\n\n票券號碼    "+TICKET_NO+"\n\n票券種類    "+TK_NAME+"\n\n票券入場紀錄\n\n"+RETURN_MSG_DATETIME;
                         }else{
@@ -151,14 +181,14 @@ public class OnlineTicketsCheck extends Activity {
                         String TICKET_NO=cstmt.getString(7);
                         cstmt.close();
                         if (RETURN_MSG.indexOf("可入") > -1) {
-                            setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME);
+                            setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券種類    " + TK_NAME);
                         }else{
                             ResultTxt.setTextColor(Color.BLACK);
                             String text="";
                             if(RETURN_MSG.indexOf("已入場") > -1){
-                                text = "票券狀態    "+RETURN_MSG+"\n\n票券號碼    "+TICKET_NO+"\n\n票券種類    "+TK_NAME+"\n\n票券入場紀錄\n\n"+RETURN_MSG_DATETIME;
+                                text = "票券狀態    " + RETURN_MSG + "\n\n票券種類    " + TK_NAME + "\n\n票券入場紀錄\n\n" + RETURN_MSG_DATETIME;
                             }else{
-                                text = "票券狀態    "+RETURN_MSG;
+                                text = "票券狀態    " + RETURN_MSG;
                             }
                             Spannable spannable = new SpannableString(text);
                             spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 8+RETURN_MSG.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -171,6 +201,7 @@ public class OnlineTicketsCheck extends Activity {
                         Spannable spannable = new SpannableString(text);
                         spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 16, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                         ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+                        WriteLog.appendLog("OnlineTicketsCheck.java/ticket/Exception:" + ex.toString());
                     }
                 }
             }
@@ -191,10 +222,6 @@ public class OnlineTicketsCheck extends Activity {
             }
         });
 
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(connectionReceiver, intentFilter);
-
         //RFID
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
         if (mNfcAdapter == null) {
@@ -203,6 +230,10 @@ public class OnlineTicketsCheck extends Activity {
         }
         mPendingIntent = PendingIntent.getActivity(this, 0, new Intent(this,
                 getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(connectionReceiver, intentFilter);
     }//End ON CREATE
 
     @Override
@@ -215,7 +246,10 @@ public class OnlineTicketsCheck extends Activity {
     protected void onNewIntent(Intent intent){
         getTagInfo(intent);
     }
+
     private void getTagInfo(Intent intent) {
+        wifiLayout.setVisibility(View.GONE);
+        rfidLayout.setVisibility(View.VISIBLE);
         Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         String tagNo="";
         byte[] tagId = tag.getId();
@@ -245,7 +279,11 @@ public class OnlineTicketsCheck extends Activity {
             String FT_NAME=cstmt.getString(8);
             cstmt.close();
             if (RETURN_MSG.indexOf("可入") > -1) {
-                setResultText(result = "姓　　名    "+FT_NAME+"\n\n票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME);
+                byte[] fileBytes=mydbHelper.GetByte(tagNo.toUpperCase().replace(" ",""));
+                bitmap = BitmapFactory.decodeByteArray(fileBytes, 0, fileBytes.length);
+                FtPhotoImage.setImageBitmap(bitmap);
+                ResultTxt3.setText("姓　　名    "+FT_NAME+"\n\n票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +TK_NAME);
+                //setResultText(result = "姓　　名    "+FT_NAME+"\n\n票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME);
             }else{
                 ResultTxt.setTextColor(Color.BLACK);
                 String text = "票券狀態    "+RETURN_MSG;
@@ -259,6 +297,7 @@ public class OnlineTicketsCheck extends Activity {
             Spannable spannable = new SpannableString(text);
             spannable.setSpan(new ForegroundColorSpan(Color.RED), 8, 16, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
+            WriteLog.appendLog("OnlineTicketsCheck.java/ticket/Exception:" + ex.toString());
         }
     }
 

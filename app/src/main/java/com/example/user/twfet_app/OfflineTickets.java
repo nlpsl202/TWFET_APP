@@ -1,4 +1,4 @@
-package com.example.user.afc_nmp;
+package com.example.user.twfet_app;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -17,6 +17,8 @@ import android.view.Window;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.example.user.afc_nmp.R;
 
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.SimpleDateFormat;
@@ -76,18 +78,28 @@ public class OfflineTickets extends Activity {
                     String iv = qr.substring(qr.length() - 16);
                     byte[] descryptBytes = decryptAES(iv.getBytes("UTF-8"), key.getBytes("UTF-8"), Base64.decode(a, Base64.DEFAULT));
                     String getdata = new String(descryptBytes);
+                    String inTime="";
+                    Calendar c = Calendar.getInstance();
+                    SimpleDateFormat df4 = new SimpleDateFormat("HHmm");
+                    if((getdata.split("@").length>=7)) {
+                        inTime=getdata.split("@")[6];
+                        if (inTime != null && !inTime.equals("") && Integer.parseInt(inTime.replace(":", "")) > Integer.parseInt(df4.format(c.getTime()))) {
+                            FailedLayout.setVisibility(View.VISIBLE);
+                            setResultText(result = "票券狀態    ");
+                            setResultText2(result = "未到入場時間！");
+                            return;
+                        }
+                    }
                     TICKET_NO = getdata.split("@")[4];
                     TK_CODE = getdata.split("@")[5];
                     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
                     SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
                     SimpleDateFormat df3 = new SimpleDateFormat("yyyy-MM-dd");
-                    Calendar c = Calendar.getInstance();
                     String[] ResultArray = new String[11];
                     if (mydbHelper.IsTICKETNOexist(TICKET_NO, SPS_ID, df3.format(c.getTime()))) {
                         FailedLayout.setVisibility(View.VISIBLE);
                         setResultText(result = "票券狀態    ");
                         setResultText2(result = "此票券已入場！");
-                        ResultTxt2.setTextColor(Color.RED);
                     } else {
                         FailedLayout.setVisibility(View.GONE);
                         setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " + TICKET_NO + "\n\n票券種類    " + mydbHelper.GetTKName(TK_CODE) + "\n\n票券入場紀錄\n\n" + df.format(c.getTime()));
@@ -111,16 +123,15 @@ public class OfflineTickets extends Activity {
                         SimpleDateFormat df3 = new SimpleDateFormat("yyyy-MM-dd");
                         Calendar c = Calendar.getInstance();
                         String[] ResultArray = new String[11];
-                        if (qr.length()==15) {
+                        if (qr.length()==15 || qr.length()==11 || qr.length()==24 || qr.length()==14 || qr.length()==44) {
                             if (mydbHelper.IsTKQRCODEexist(qr, SPS_ID, df3.format(c.getTime()))) {
                                 FailedLayout.setVisibility(View.VISIBLE);
                                 setResultText(result = "票券狀態    ");
                                 setResultText2(result = "此票券已入場！");
-                                ResultTxt2.setTextColor(Color.RED);
                             }else{
                                 FailedLayout.setVisibility(View.GONE);
                                 setResultText(result = "票券狀態    驗票成功");
-                                ResultArray[0] = "A";
+                                ResultArray[0] = "C";
                                 ResultArray[1] = "";
                                 ResultArray[2] = SPS_ID;
                                 ResultArray[3] = "I";
@@ -137,14 +148,12 @@ public class OfflineTickets extends Activity {
                             FailedLayout.setVisibility(View.VISIBLE);
                             setResultText(result = "票券狀態    ");
                             setResultText2(result = "非花博票券條碼！");
-                            ResultTxt2.setTextColor(Color.RED);
                         }
                     }
                     catch (Exception e) {
                         FailedLayout.setVisibility(View.VISIBLE);
                         setResultText(result = "票券狀態    ");
                         setResultText2(result = "非花博票券條碼！");
-                        ResultTxt2.setTextColor(Color.RED);
                     }
                 }
             }
@@ -201,10 +210,10 @@ public class OfflineTickets extends Activity {
             SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
             Calendar c = Calendar.getInstance();
             String[] ResultArray = new String[11];
-            if(tagNo.length()==8){
+            if(tagNo.length()==14){
                 FailedLayout.setVisibility(View.GONE);
                 setResultText(result = "票券狀態    驗票成功\n\n票券種類    全期間票");
-                ResultArray[0] = "A";
+                ResultArray[0] = "D";
                 ResultArray[1] = "";
                 ResultArray[2] = SPS_ID;
                 ResultArray[3] = "I";
@@ -214,7 +223,7 @@ public class OfflineTickets extends Activity {
                 ResultArray[7] = df2.format(c.getTime());
                 ResultArray[8] = "";
                 ResultArray[9] = getDateTime();
-                ResultArray[10] = tagNo;
+                ResultArray[10] = tagNo.toUpperCase();
                 mydbHelper.InsertToSQLiteUltraLight03(ResultArray, "");
             }else{
                 FailedLayout.setVisibility(View.VISIBLE);

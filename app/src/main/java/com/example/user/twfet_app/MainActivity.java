@@ -1,10 +1,11 @@
-package com.example.user.afc_nmp;
+package com.example.user.twfet_app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -15,6 +16,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.example.user.afc_nmp.R;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -22,56 +25,62 @@ import java.nio.channels.FileChannel;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
     EditText DEVICE_ID_Edt;
-    Button btnlogin,btnDBIPBtn;
+    Button btnlogin;
     String SPS_ID,DEVICE_ID;
+
     //建立連線
     Connection con;
     Statement stmt;
+
     //SQLite
     private MyDBHelper mydbHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Log.d("MainActivity.java","應用程式開啟");
-        WriteLog.appendLog("MainActivity.java/應用程式開啟");
-
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
 
-        //SQLite
-        mydbHelper = new MyDBHelper(this);
-        mydbHelper.InsertToConnectIP("172.16.30.181");
-        if(mydbHelper.GetConnectIP()==""){
-            Toast.makeText(MainActivity.this, "請先進行資料庫連線設定！", Toast.LENGTH_SHORT).show();
-            Log.d("MainActivity.java","尚未設定資料庫連線IP位置！");
-            WriteLog.appendLog("MainActivity.java/尚未設定資料庫連線IP位置！");
-        }else {
-            ConnectionClass.ip = mydbHelper.GetConnectIP().trim();
-            con = ConnectionClass.CONN();
-            if(!CheckSpsInfoData()){
-                Toast.makeText(MainActivity.this, "無法更新資料庫", Toast.LENGTH_SHORT).show();
-            }else if (!CheckStationConfData()) {
-                Toast.makeText(MainActivity.this, "無法更新資料庫", Toast.LENGTH_SHORT).show();
-            }else if (!CheckTicketKindData()) {
-                Toast.makeText(MainActivity.this, "無法更新資料庫", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(MainActivity.this, "資料庫已更新。", Toast.LENGTH_SHORT).show();
-            }
-        }
-
         DEVICE_ID_Edt = (EditText) findViewById(R.id.DEVICE_ID_Edt);
         btnlogin = (Button) findViewById(R.id.LoginBtn);
-        //btnDBIPBtn=(Button) findViewById(R.id.DBIPBtn);
+        mydbHelper = new MyDBHelper(this);
+
+        if(!mydbHelper.GetConnectIP().equals("") && !mydbHelper.GetConnectUN().equals("") && !mydbHelper.GetConnectPASSWORD().equals("")) {
+            ConnectionClass.ip = mydbHelper.GetConnectIP().trim();
+            ConnectionClass.un = mydbHelper.GetConnectUN().trim();
+            ConnectionClass.password = mydbHelper.GetConnectPASSWORD().trim();
+        }
+        con = ConnectionClass.CONN();
+
+        if (shouldAskPermissions()) {
+            askPermissions();
+        }
+
+        if(!CheckSpsInfoData()){
+            Toast.makeText(MainActivity.this, "無法更新資料庫", Toast.LENGTH_SHORT).show();
+        }else if (!CheckStationConfData()) {
+            Toast.makeText(MainActivity.this, "無法更新資料庫", Toast.LENGTH_SHORT).show();
+        }else if (!CheckTicketKindData()) {
+            Toast.makeText(MainActivity.this, "無法更新資料庫", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(MainActivity.this, "資料庫已更新。", Toast.LENGTH_SHORT).show();
+        }
 
         btnlogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 DEVICE_ID=DEVICE_ID_Edt.getText().toString();
-                if(!mydbHelper.CheckExistDEVICE_ID(DEVICE_ID)){
+                if(DEVICE_ID.split("@").length==3){
+                    if(isIP(DEVICE_ID.split("@")[0])){
+                        mydbHelper.InsertToConnectIP(DEVICE_ID.split("@")[0],DEVICE_ID.split("@")[1],DEVICE_ID.split("@")[2]);
+                        Toast.makeText(MainActivity.this, "連線資料更新成功！", Toast.LENGTH_SHORT).show();
+                    }
+                }else if(!mydbHelper.CheckExistDEVICE_ID(DEVICE_ID)){
                     Toast.makeText(MainActivity.this, "無此設備代碼", Toast.LENGTH_SHORT).show();
                 }else{
                     SPS_ID=DEVICE_ID.substring(0,4);
@@ -84,15 +93,6 @@ public class MainActivity extends Activity {
             }
         });//END BTNLOGIN
 
-        /*btnDBIPBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent callSub = new Intent();
-                callSub.setClass(MainActivity.this, ConnectSetting.class);
-                startActivityForResult(callSub, 0);
-            }
-        });*/
-
         //產生db用來檢視資料
         copyDbToExternal(this);
     }//END ONCREATE
@@ -100,7 +100,6 @@ public class MainActivity extends Activity {
     @Override
     public void onRestart(){
         super.onRestart();
-        ConnectionClass.ip = mydbHelper.GetConnectIP().trim();
         con = ConnectionClass.CONN();
         if(!CheckSpsInfoData()){
             Toast.makeText(MainActivity.this, "無法更新資料庫", Toast.LENGTH_SHORT).show();
@@ -117,42 +116,31 @@ public class MainActivity extends Activity {
     public boolean CheckSpsInfoData(){
         try {
             if (con == null) {
-                Log.d("MainActivity.java","CON為NULL");
-                WriteLog.appendLog("MainActivity.java/SPSINFO/con為null");
+                WriteLog.appendLog("MainActivity.java/CheckSpsInfoData/con為null");
                 return false;
-                //Toast.makeText(MainActivity.this,  "離線作業，無法取得網路資料庫", Toast.LENGTH_SHORT).show();
             } else {
-                //讀取場站SpsInfo資料數
+                //讀取中央cSpsInfo資料數
                 String query = "SELECT COUNT(*) AS rowcounts from cSpsInfo";
                 stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 rs.next();
-                // Get the rowcount column value.
                 int ResultCount = rs.getInt("rowcounts") ;
                 rs.close() ;
-                //假如目前SQLite內的StatioConf數量和場站的不同，則DROP掉SQLITE的StatioConf，重新產生StatioConf
-                if(mydbHelper.GetSpsInfoNumber()!=ResultCount)
-                {
-                    //刪除SQLITE
+                //假如目前SQLite內的cSpsInfo數量和中央的不同，則刪除SQLITE的cSpsInfo資料，重新插入
+                if(mydbHelper.GetSpsInfoNumber()!=ResultCount) {
                     mydbHelper.DeleteSpsInfo();
-                    //重新插入
                     mydbHelper.InsertToSpsInfo();
                     return true;
-                    //Toast.makeText(MainActivity.this,  "AFCAC資料庫已更新。", Toast.LENGTH_SHORT).show();
                 }
-                else
-                {
+                else {
                     //更新MODIFYDT不為NULL的資料
                     mydbHelper.UpdateSpsInfo();
-                    return  true;
-                    //Toast.makeText(MainActivity.this,  "AFCAC資料庫已更新2。", Toast.LENGTH_SHORT).show();
+                    return true;
                 }
             }
         } catch (Exception ex) {
-            Log.d("MainActivity.java","Exception:"+ex);
-            WriteLog.appendLog("MainActivity.java/SPSINFO/Exception:"+ex);
+            WriteLog.appendLog("MainActivity.java/CheckSpsInfoData/Exception:"+ex);
             return false;
-            //Toast.makeText(MainActivity.this,  "Exception "+ex, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -160,42 +148,31 @@ public class MainActivity extends Activity {
     public boolean CheckStationConfData(){
         try {
             if (con == null) {
-                Log.d("MainActivity.java","CON為NULL");
-                WriteLog.appendLog("MainActivity.java/STATIONCONF/con為null");
+                WriteLog.appendLog("MainActivity.java/CheckStationConfData/con為null");
                 return false;
-                //Toast.makeText(MainActivity.this,  "離線作業，無法取得網路資料庫", Toast.LENGTH_SHORT).show();
             } else {
-                //讀取場站StatioConf資料數
+                //讀取場站cStationConf資料數
                 String query = "SELECT COUNT(*) AS rowcounts from cStationConf";
                 stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 rs.next();
-                // Get the rowcount column value.
                 int ResultCount = rs.getInt("rowcounts") ;
                 rs.close() ;
-                //假如目前SQLite內的StatioConf數量和場站的不同，則DROP掉SQLITE的StatioConf，重新產生StatioConf
-                if(mydbHelper.GetStationConfNumber()!=ResultCount)
-                {
-                    //刪除SQLITE
+                //假如目前SQLite內的cStationConf數量和中央的不同，則刪除SQLITE的cStationConf資料，重新插入
+                if(mydbHelper.GetStationConfNumber()!=ResultCount) {
                     mydbHelper.DeleteStationConf();
-                    //重新插入
                     mydbHelper.InsertToStationConf();
                     return true;
-                    //Toast.makeText(MainActivity.this,  "AFCAC資料庫已更新。", Toast.LENGTH_SHORT).show();
                 }
-                else
-                {
+                else {
                     //更新MODIFYDT不為NULL的資料
                     mydbHelper.UpdateStationConf();
                     return  true;
-                    //Toast.makeText(MainActivity.this,  "AFCAC資料庫已更新2。", Toast.LENGTH_SHORT).show();
                 }
             }
         } catch (Exception ex) {
-            Log.d("MainActivity.java","Exception:"+ex);
-            WriteLog.appendLog("MainActivity.java/STATIONCONF/Exception:"+ex);
+            WriteLog.appendLog("MainActivity.java/CheckStationConfData/Exception:"+ex);
             return false;
-            //Toast.makeText(MainActivity.this,  "Exception "+ex, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -203,42 +180,31 @@ public class MainActivity extends Activity {
     public boolean CheckTicketKindData(){
         try {
             if (con == null) {
-                Log.d("MainActivity.java","CON為NULL");
-                WriteLog.appendLog("MainActivity.java/TICKETKIND/con為null");
+                WriteLog.appendLog("MainActivity.java/CheckTicketKindData/con為null");
                 return false;
-                //Toast.makeText(MainActivity.this,  "離線作業，無法取得網路資料庫", Toast.LENGTH_SHORT).show();
             } else {
-                //讀取場站StatioConf資料數
+                //讀取場站cTicketKind資料數
                 String query = "SELECT COUNT(*) AS rowcounts from cTicketKind";
                 stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 rs.next();
-                // Get the rowcount column value.
                 int ResultCount = rs.getInt("rowcounts") ;
                 rs.close() ;
-                //假如目前SQLite內的cTicketKind數量和場站的不同，則DROP掉SQLITE的cTicketKind，重新產生cTicketKind
-                if(mydbHelper.GetTicketKindNumber()!=ResultCount)
-                {
-                    //刪除SQLITE
+                //假如目前SQLite內的cTicketKind數量和中央的不同，則刪除SQLITE的cTicketKind資料，重新插入
+                if(mydbHelper.GetTicketKindNumber()!=ResultCount) {
                     mydbHelper.DeleteTicketKind();
-                    //重新插入
                     mydbHelper.InsertTocTicketKind();
                     return true;
-                    //Toast.makeText(MainActivity.this,  "AFCAC資料庫已更新。", Toast.LENGTH_SHORT).show();
                 }
-                else
-                {
+                else {
                     //更新MODIFYDT不為NULL的資料
                     mydbHelper.UpdateTicketKind();
                     return  true;
-                    //Toast.makeText(MainActivity.this,  "AFCAC資料庫已更新2。", Toast.LENGTH_SHORT).show();
                 }
             }
         } catch (Exception ex) {
-            Log.d("MainActivity.java","Exception:"+ex);
-            WriteLog.appendLog("MainActivity.java/TICKETKIND/Exception:"+ex);
+            WriteLog.appendLog("MainActivity.java/CheckTicketKindData/Exception:"+ex);
             return false;
-            //Toast.makeText(MainActivity.this,  "Exception "+ex, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -294,5 +260,29 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean isIP(String addr) {
+            if (addr.length() < 7 || addr.length() > 15 || "".equals(addr)) {
+                return false;
+            }
+            String rexp = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
+            Pattern pat = Pattern.compile(rexp);
+            Matcher mat = pat.matcher(addr);
+            boolean isipAddress = mat.find();
+            return isipAddress;
+        }
+
+    protected void askPermissions() {
+        String[] permissions = {
+                "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE"
+        };
+        int requestCode = 200;
+        requestPermissions(permissions, requestCode);
+    }
+
+    protected boolean shouldAskPermissions() {
+        return (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1);
     }
 }//END CLASS

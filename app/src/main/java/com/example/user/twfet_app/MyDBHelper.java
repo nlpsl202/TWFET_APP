@@ -1,4 +1,4 @@
-package com.example.user.afc_nmp;
+package com.example.user.twfet_app;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -20,7 +20,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
     protected String CREATE_CSPSINFO = "create table if not exists cSpsInfo(SPS_ID text NOT NULL, SPS_NAME text, SPS_SDATE text,SPS_EDATE text, SYNCTIME text, CREATEDT text, CREATEID text, MODIFYDT text, MODIFYID text,PRIMARY KEY (SPS_ID))";
     protected String CREATE_CSTATIONCONF = "create table if not exists cStationConf(DEVICE_ID text NOT NULL, DeviceTypeID text, SPS_ID text,MCNO text, IP text,MACMFRC text, IMEI_CODE text,TRANSFER_STATUS text, SYNCTIME text, CREATEID text, CREATEDT text, MODIFYID text,MODIFYDT text,PRIMARY KEY (DEVICE_ID))";
     protected String CREATE_CTicketKind = "create table if not exists cTicketKind(TK_CODE text NOT NULL, TK_NAME text NOT NULL, TK_NAME_ENG text, TK_NAME_JAP text, TK_PRICE Integer,TK_BACK_FEE Integer,TK_DAYS text,TK_START_TM text,TK_UNTIL_TM text,SP_MEMO text, SYNCTIME text, CREATEDT text, CREATEID text, MODIFYDT text,MODIFYID text,PRIMARY KEY (TK_CODE))";
-    protected String CREATE_ConnectIP = "create table if not exists cConnectIP(IP text NOT NULL,PRIMARY KEY (IP))";
+    protected String CREATE_ConnectIP = "create table if not exists cConnectIP(IP text NOT NULL,UN text NOT NULL,PASSWORD text NOT NULL,PRIMARY KEY (IP))";
     protected String CREATE_PULTRALIGHT03 = "create table if not exists pUltraLight03(TICKET_TYPE text NOT NULL, TICKET_NO text, SPS_ID text NOT NULL, TK_ENTER_DT text NOT NULL, IN_OUT_TYPE text NOT NULL, DEVICE_ID text NOT NULL, TK_CODE text, QRCODE text , INSERT_DB_DATETIME text, TRANSFER_STATUS text, CREATEID text, CREATEDT text, MODIFYID text,MODIFYDT text,FT_SERIALNO text,PRIMARY KEY (TICKET_TYPE,TICKET_NO,SPS_ID,TK_ENTER_DT))";
     protected String CREATE_PULTRALIGHT03_EXP = "create table if not exists pUltraLight03Exp(TICKET_TYPE text NOT NULL, TICKET_NO text, SPS_ID text NOT NULL, TK_ENTER_DT text NOT NULL, IN_OUT_TYPE text NOT NULL, DEVICE_ID text NOT NULL, TK_CODE text, QRCODE text , INSERT_DB_DATETIME text, TRANSFER_STATUS text, CREATEID text, CREATEDT text, MODIFYID text,MODIFYDT text,FT_SERIALNO text,PRIMARY KEY (TICKET_TYPE,TICKET_NO,SPS_ID,TK_ENTER_DT))";
 
@@ -43,7 +43,6 @@ public class MyDBHelper extends SQLiteOpenHelper {
         Database.execSQL(CREATE_CTicketKind);
         Database.execSQL(CREATE_ConnectIP);
 
-        Log.d("MyDBHelper.java", "SQLITE的TABLE建立成功");
         WriteLog.appendLog("MyDBHelper.java/SQLITE的TABLE建立成功");
     }
 
@@ -317,7 +316,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
                 WriteLog.appendLog("MyDBHelper.java/UpdateSpsInfo/con為Null");
             }
             else{
-                String query = "select SPS_ID,SPS_NAME,SPS_SDATE,SPS_EDATE,SYNCTIME,CREATEDT,CREATEID,MODIFYDT,MODIFYID FROM cSpsInfo where MODIFYDT is not null";
+                String query = "select SPS_ID,convert(nvarchar(50),SPS_NAME) as SPS_NAME,SPS_SDATE,SPS_EDATE,SYNCTIME,CREATEDT,CREATEID,MODIFYDT,MODIFYID FROM cSpsInfo where MODIFYDT is not null";
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 while (rs.next())
@@ -491,6 +490,12 @@ public class MyDBHelper extends SQLiteOpenHelper {
                 InsertToUltraLight03Exp(cursor.getString(0),cursor.getString(1),cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getString(5),cursor.getString(6),cursor.getString(7),cursor.getString(8),cursor.getString(9),cursor.getString(10),cursor.getString(11),cursor.getString(12),cursor.getString(13));
                 //更新此票券的TRANSFER_STATUS為OK
                 UpdateUltraLight03TRS(cursor.getString(7),cursor.getString(2),cursor.getString(3),cursor.getString(14));
+            }else if(result_msg.indexOf("失敗")>-1 || result_msg.indexOf("衝突")>-1){//如果新增失敗
+                //刪除此筆資料
+                String statement = "delete from pUltraLight03 where FT_SERIALNO='"+cursor.getString(14)+"' or QRCODE='"+cursor.getString(7)+"'";
+                Log.d("Delete", statement);
+                super.getWritableDatabase().execSQL(statement);
+                super.close();
             }
         }
     }
@@ -508,7 +513,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
             cstmt.setString("IN_OUT_TYPE",IN_OUT_TYPE);
             cstmt.setString("DEVICE_ID",DEVICE_ID);
             cstmt.setString("TK_CODE",TK_CODE);
-            cstmt.setString("QRCODE",QRCODE);
+            cstmt.setString("QRCODE",QRCODE.equals("") ?null :QRCODE);
             cstmt.setString("INSERT_DB_DATETIME",INSERT_DB_DATETIME);
             cstmt.setString("TRANSFER_STATUS",TRANSFER_STATUS);
             cstmt.setString("CREATEID",CREATEID);
@@ -542,8 +547,23 @@ public class MyDBHelper extends SQLiteOpenHelper {
     }
 
     //執行館內數查詢SP
-    public String executePeopleNumStoredProcedure(Connection con) {
-        String RETURN_MSG="";
+    public String executePeopleNumStoredProcedure(Connection con,String SPS_ID) {
+        String returnNumber="0";
+        try {
+            CallableStatement cstmt = con.prepareCall("{ call dbo.SP_GATE_PeopleCount(?)}");
+            cstmt.setString("SPS_ID",SPS_ID);
+            ResultSet rs=cstmt.executeQuery();
+            while (rs.next())
+            {
+                returnNumber = rs.getString("ORG_CAPACITY");
+            }
+            cstmt.close();
+            return returnNumber;
+        }
+        catch (Exception e) {
+            return returnNumber;
+        }
+        /*String RETURN_MSG="";
         try {
             CallableStatement cstmt = con.prepareCall("{ call dbo.SP_HAND_CrowdInOut(?,?,?)}");
 
@@ -562,11 +582,11 @@ public class MyDBHelper extends SQLiteOpenHelper {
             Log.d("MyDB.java/查詢館內人數SP", e.toString());
             WriteLog.appendLog("MyDBHelper.java/查詢館內人數SP/Exception:" + e.toString());
         }
-        return  RETURN_MSG;
+        return  RETURN_MSG;*/
     }
 
     //設定資料庫連線IP存至SQLITE
-    public void InsertToConnectIP(String IP){
+    public void InsertToConnectIP(String ip,String un ,String password){
         try {
             //先刪除SQLITE內的IP
             String statement = "delete from cConnectIP";
@@ -574,7 +594,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
             super.getWritableDatabase().execSQL(statement);
             super.close();
             //插入新的IP
-            String statement2 = "insert into cConnectIP (IP) values(' "+IP.trim()+" ')";
+            String statement2 = "insert into cConnectIP (IP,UN,PASSWORD) values('"+ip.trim()+"','"+un.trim()+"','"+password.trim()+"')";
             super.getWritableDatabase().execSQL(statement2);
         }
         catch (Exception ex) {
@@ -593,6 +613,30 @@ public class MyDBHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return IP;
+    }
+
+    //取得資料庫連線IP
+    public String GetConnectUN(){
+        String UN="";
+        //使用 rawQuery 方法
+        Cursor cursor = super.getReadableDatabase().rawQuery("select UN from cConnectIP",null);
+        while (cursor.moveToNext()) {
+            UN = cursor.getString(0);
+        }
+        cursor.close();
+        return UN;
+    }
+
+    //取得資料庫連線IP
+    public String GetConnectPASSWORD(){
+        String PASSWORD="";
+        //使用 rawQuery 方法
+        Cursor cursor = super.getReadableDatabase().rawQuery("select PASSWORD from cConnectIP",null);
+        while (cursor.moveToNext()) {
+            PASSWORD = cursor.getString(0);
+        }
+        cursor.close();
+        return PASSWORD;
     }
 
     //檢查園區代碼是否存在
@@ -672,7 +716,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
                 image=rs.getBytes(1);
             }
         }catch(Exception ex){
-            WriteLog.appendLog("MyDBHelper.java/GetDeviceSPS_ID/Exception:" + ex.toString());
+            WriteLog.appendLog("MyDBHelper.java/GetByte/Exception:" + ex.toString());
         }
         return image;
     }

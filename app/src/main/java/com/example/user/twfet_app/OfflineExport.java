@@ -1,4 +1,4 @@
-package com.example.user.afc_nmp;
+package com.example.user.twfet_app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -19,6 +19,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.user.afc_nmp.R;
+
 import java.sql.Connection;
 
 /**
@@ -36,9 +38,7 @@ public class OfflineExport extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        //requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
         setContentView(R.layout.offline_export);
-        //getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.titlebar);
 
         ReturnBtn=(Button)findViewById(R.id.ReturnBtn);
         ImportBtn=(Button)findViewById(R.id.ImportBtn);
@@ -70,8 +70,13 @@ public class OfflineExport extends Activity {
                                 int getNumber=0;
                                 mydbHelper.SelectFromUltraLight03();
                                 getNumber=mydbHelper.GetUltraLight03ExpNmber();
-                                ResultTxt.setText("成功匯出！");
-                                ResultTxt2.setText("成功上傳離線驗票資料 " + getNumber + " 筆！");
+                                if(getNumber<=0){
+                                    ResultTxt.setText("匯出失敗！");
+                                    ResultTxt2.setText("無有效上傳資料！");
+                                }else{
+                                    ResultTxt.setText("成功匯出！");
+                                    ResultTxt2.setText("成功上傳離線驗票資料 " + getNumber + " 筆！");
+                                }
                                 //AlertDialog.Builder alertad = new AlertDialog.Builder(OfflineExport.this);
                                 //alertad.setTitle("離線資料上傳");
                                 //alertad.setMessage("成功上傳離線驗票資料" + getNumber + "筆！");

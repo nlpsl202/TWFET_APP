@@ -38,7 +38,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="70dp"
-                    android:layout_marginTop="50dp"
+                    android:layout_marginTop="30dp"
                     android:textColor="#000000"
                     android:textSize="18dp" />
 
@@ -52,7 +52,7 @@
                         android:id="@+id/failedImage"
                         android:layout_width="130dp"
                         android:layout_height="70dp"
-                        android:layout_marginTop="30dp"
+                        android:layout_marginTop="10dp"
                         android:src="@drawable/ticket_failed" />
 
                     <TextView
@@ -88,7 +88,7 @@
                     android:layout_marginLeft="10dp"
                     android:layout_gravity="right|center"
                     android:textColor="#000000"
-                    android:textSize="15dp" />
+                    android:textSize="13dp" />
 
              </LinearLayout>
 
@@ -100,7 +100,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginLeft="15px"
-            android:text="目前館內人數  0  人"
+            android:text="目前園內人數  0  人"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:textColor="#000000" />
 

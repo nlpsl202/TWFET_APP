@@ -1,4 +1,4 @@
-package com.example.user.afc_nmp;
+package com.example.user.twfet_app;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.nfc.NfcAdapter;
@@ -24,6 +25,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.user.afc_nmp.R;
 
 import java.security.spec.AlgorithmParameterSpec;
 import java.sql.CallableStatement;
@@ -61,12 +64,11 @@ public class OnlineTickets extends Activity {
     NfcAdapter mNfcAdapter;
     PendingIntent mPendingIntent;
     Bitmap bitmap;
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        //requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
         setContentView(R.layout.online_tickets);
-        //getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.titlebar);
 
         //取得上個頁面傳來的值
         Intent intent = getIntent();
@@ -74,11 +76,11 @@ public class OnlineTickets extends Activity {
         SPS_ID=intent.getStringExtra("SPS_ID");
 
         ResultTxt=(TextView) findViewById(R.id.ResultTxt);
+        ResultTxt2=(TextView) findViewById(R.id.ResultTxt2);
+        ResultTxt3=(TextView) findViewById(R.id.ResultTxt3);
         PeopleNumTxt=(TextView) findViewById(R.id.PeopleNumTxt);
         ReturnBtn=(Button)findViewById(R.id.ReturnBtn);
         HomeBtn=(Button)findViewById(R.id.HomeBtn);
-        ResultTxt2=(TextView) findViewById(R.id.ResultTxt2);
-        ResultTxt3=(TextView) findViewById(R.id.ResultTxt3);
         FailedLayout=(LinearLayout) findViewById(R.id.FailedLayout);
         wifiLayout=(LinearLayout) findViewById(R.id.wifiLayout);
         rfidLayout=(LinearLayout) findViewById(R.id.rfidLayout);
@@ -87,19 +89,16 @@ public class OnlineTickets extends Activity {
         //SQLITE
         mydbHelper = new MyDBHelper(this);
 
-        //更新設備所在園區
-        //mydbHelper.UpdateDeviceSPS_ID(SPS_ID,DEVICE_ID);
-
         //SQL SERVER
         connectionClass = new ConnectionClass();
         con= connectionClass.CONN();
 
         //查詢館內人數
-        PeopleNumTxt.setText("目前館內人數 "+mydbHelper.executePeopleNumStoredProcedure(con)+" 人");
+        PeopleNumTxt.setText("目前園內人數 "+mydbHelper.executePeopleNumStoredProcedure(con,SPS_ID)+" 人");
         PeopleNumTxt.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                PeopleNumTxt.setText("目前館內人數 "+mydbHelper.executePeopleNumStoredProcedure(con)+" 人");
+                PeopleNumTxt.setText("目前園內人數 "+mydbHelper.executePeopleNumStoredProcedure(con,SPS_ID)+" 人");
             }
         });
 
@@ -111,6 +110,7 @@ public class OnlineTickets extends Activity {
         cbMgr=(ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
         mPrimaryClipChangedListener =new ClipboardManager.OnPrimaryClipChangedListener(){
             public void onPrimaryClipChanged() {
+                WriteLog.appendLog("testtt");
                 wifiLayout.setVisibility(View.VISIBLE);
                 rfidLayout.setVisibility(View.GONE);
                 try{
@@ -120,6 +120,19 @@ public class OnlineTickets extends Activity {
                     String iv=qr.substring(qr.length() - 16);
                     byte[] descryptBytes=decryptAES(iv.getBytes("UTF-8"),key.getBytes("UTF-8"), Base64.decode(a, Base64.DEFAULT));
                     String getdata = new String(descryptBytes);
+                    String inTime="";
+                    Calendar c = Calendar.getInstance();
+                    SimpleDateFormat df4 = new SimpleDateFormat("HHmm");
+                    if((getdata.split("@").length>=7)){
+                        inTime=getdata.split("@")[6];
+                        if(inTime != null && !inTime.equals("") && Integer.parseInt(inTime.replace(":","")) > Integer.parseInt(df4.format(c.getTime()))){
+                            FailedLayout.setVisibility(View.VISIBLE);
+                            setResultText(result = "票券狀態    ");
+                            setResultText2(result = "未到入場時間！");
+                            ResultTxt2.setTextColor(Color.RED);
+                            return;
+                        }
+                    }
                     String TICKET_NO=getdata.split("@")[4];
                     String TK_CODE=getdata.split("@")[5];
 
@@ -146,12 +159,15 @@ public class OnlineTickets extends Activity {
 
                     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
                     SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
-                    Calendar c = Calendar.getInstance();
 
                     String[] ResultArray=new String[10];
                     if (RETURN_MSG.indexOf("OPEN") > -1) {
                         FailedLayout.setVisibility(View.GONE);
-                        setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +TK_NAME+ "\n\n票券入場紀錄\n\n"+df.format(c.getTime()));
+                        if(TICKET_NO.substring(0,2).equals("OG")||TICKET_NO.substring(0,2).equals("OK")||TICKET_NO.substring(0,2).equals("OJ")){
+                            setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +TK_NAME+ "\n\n人數            "+ getdata.split("@")[7] +"\n\n票券入場紀錄\n\n"+df.format(c.getTime()));
+                        }else{
+                            setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +TK_NAME+ "\n\n票券入場紀錄\n\n"+df.format(c.getTime()));
+                        }
                         ResultArray[0]="A";
                         ResultArray[1]=TICKET_NO;
                         ResultArray[2]=SPS_ID;
@@ -188,7 +204,7 @@ public class OnlineTickets extends Activity {
                         cstmt.registerOutParameter(12, java.sql.Types.VARCHAR);
                         cstmt.execute();
                         String RETURN_MSG = cstmt.getString(6);
-                        String TICKET_NO=cstmt.getString(10);
+                        String TICKET_NO=qr;
                         String TK_NAME = cstmt.getString(7);
                         String TK_CODE = cstmt.getString(9);
                         cstmt.close();
@@ -203,8 +219,8 @@ public class OnlineTickets extends Activity {
                         rfidLayout.setVisibility(View.GONE);
                         if (RETURN_MSG.indexOf("OPEN") > -1) {
                             FailedLayout.setVisibility(View.GONE);
-                            setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +TK_NAME+ "\n\n票券入場紀錄\n\n"+df.format(c.getTime()));
-                            ResultArray[0]="A";
+                            setResultText(result = "票券狀態    驗票成功" + "\n\n票券種類    " +TK_NAME+ "\n\n票券入場紀錄\n\n"+df.format(c.getTime()));
+                            ResultArray[0]="C";
                             ResultArray[1]=TICKET_NO;
                             ResultArray[2]=SPS_ID;
                             ResultArray[3]="I";
@@ -224,6 +240,7 @@ public class OnlineTickets extends Activity {
                         FailedLayout.setVisibility(View.VISIBLE);
                         setResultText(result = "票券狀態    ");
                         setResultText2(result = "非花博票券條碼！");
+                        WriteLog.appendLog("OnlineTickets.java/ticket/Exception:" + ex.toString());
                     }
                 }
             }
@@ -263,6 +280,8 @@ public class OnlineTickets extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
+        cbMgr.addPrimaryClipChangedListener(mPrimaryClipChangedListener);
         mNfcAdapter.enableForegroundDispatch(this, mPendingIntent, null, null);
     }
 
@@ -270,6 +289,7 @@ public class OnlineTickets extends Activity {
     protected void onNewIntent(Intent intent){
         getTagInfo(intent);
     }
+
     private void getTagInfo(Intent intent) {
         Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         String tagNo="";
@@ -313,8 +333,8 @@ public class OnlineTickets extends Activity {
                 bitmap = BitmapFactory.decodeByteArray(fileBytes, 0, fileBytes.length);
                 FtPhotoImage.setImageBitmap(bitmap);
                 ResultTxt3.setText("姓　　名    "+FT_NAME+"\n\n票券狀態    驗票成功" + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +TK_NAME);
-                ResultArray[0]="A";
-                ResultArray[1]=TICKET_NO;
+                ResultArray[0]="D";
+                ResultArray[1]=tagNo.toUpperCase();
                 ResultArray[2]=SPS_ID;
                 ResultArray[3]="I";
                 ResultArray[4]=DEVICE_ID.replace('G','H');
@@ -337,6 +357,7 @@ public class OnlineTickets extends Activity {
             FailedLayout.setVisibility(View.VISIBLE);
             setResultText(result = "票券狀態    ");
             setResultText2(result = "非花博票券條碼！");
+            WriteLog.appendLog("OnlineTickets.java/getTagInfo/Exception:" + ex.toString());
         }
     }
 
@@ -390,21 +411,6 @@ public class OnlineTickets extends Activity {
     public void setVibrate(int time){
         Vibrator myVibrator = (Vibrator) getSystemService(Service.VIBRATOR_SERVICE);
         myVibrator.vibrate(time);
-    }
-
-    private String ByteArrayToHexString(byte [] inarray) {
-        int i, j, in;
-        String [] hex = {"0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"};
-        String out= "";
-        for(j = 0 ; j < inarray.length ; ++j)
-        {
-            in = (int) inarray[j] & 0xff;
-            i = (in >> 4) & 0x0f;
-            out += hex[i];
-            i = in & 0x0f;
-            out += hex[i];
-        }
-        return out;
     }
 
     //監控網路狀態
