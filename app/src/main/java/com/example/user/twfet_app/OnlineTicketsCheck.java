@@ -29,8 +29,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.user.twfet_app.R;
-
 import java.security.spec.AlgorithmParameterSpec;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -42,7 +40,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * Created by USER on 2015/11/19.
+ * Created by jeff.
  */
 public class OnlineTicketsCheck extends Activity {
     private static String key="SET31275691$00000000000000000000";
@@ -117,11 +115,12 @@ public class OnlineTicketsCheck extends Activity {
                     String iv=qr.substring(qr.length() - 16);
                     byte[] descryptBytes=decryptAES(iv.getBytes("UTF-8"),key.getBytes("UTF-8"), Base64.decode(a, Base64.DEFAULT));
                     String getdata = new String(descryptBytes);
+                    String ary[]=getdata.split("@");
                     String inTime="";
                     Calendar c = Calendar.getInstance();
                     SimpleDateFormat df4 = new SimpleDateFormat("HHmm");
-                    if((getdata.split("@").length>=7)) {
-                        inTime=getdata.split("@")[6];
+                    if(ary.length>=7) {
+                        inTime=ary[6];
                         if (inTime != null && !inTime.equals("") && Integer.parseInt(inTime.replace(":", "")) > Integer.parseInt(df4.format(c.getTime()))) {
                             text = "票券狀態    未到入場時間！";
                             Spannable spannable = new SpannableString(text);
@@ -130,7 +129,7 @@ public class OnlineTicketsCheck extends Activity {
                             return;
                         }
                     }
-                    String TICKET_NO=getdata.split("@")[4];
+                    String TICKET_NO=ary[4];
                     connectionClass = new ConnectionClass();
                     con= connectionClass.CONN();
                     CallableStatement cstmt = con.prepareCall("{ call dbo.SP_TVM_TicketStateQuery(?,?,?,?,?,?,?,?)}");
@@ -148,7 +147,11 @@ public class OnlineTicketsCheck extends Activity {
                     String TK_NAME = cstmt.getString(6);
                     cstmt.close();
                     if (RETURN_MSG.indexOf("可入") > -1) {
-                        setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME);
+                        if((TICKET_NO.substring(0,2).equals("OG")||TICKET_NO.substring(0,2).equals("OK")||TICKET_NO.substring(0,2).equals("OJ")) && ary.length>=8){
+                            setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME+ "\n\n人數            "+ ary[7]);
+                        }else{
+                            setResultText(result = "票券狀態    " + RETURN_MSG + "\n\n票券號碼    " +TICKET_NO + "\n\n票券種類    " + TK_NAME);
+                        }
                     }else{
                         ResultTxt.setTextColor(Color.BLACK);
                         if(RETURN_MSG.indexOf("已入場") > -1){
@@ -239,7 +242,22 @@ public class OnlineTicketsCheck extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(connectionReceiver, intentFilter);
+        cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
+        cbMgr.addPrimaryClipChangedListener(mPrimaryClipChangedListener);
         mNfcAdapter.enableForegroundDispatch(this, mPendingIntent, null, null);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(connectionReceiver);
+        cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
+        if (mNfcAdapter != null) {
+            mNfcAdapter.disableForegroundDispatch(this);
+        }
     }
 
     @Override
@@ -299,21 +317,6 @@ public class OnlineTicketsCheck extends Activity {
             ResultTxt.setText(spannable, TextView.BufferType.SPANNABLE);
             WriteLog.appendLog("OnlineTicketsCheck.java/ticket/Exception:" + ex.toString());
         }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (mNfcAdapter != null) {
-            mNfcAdapter.disableForegroundDispatch(this);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unregisterReceiver(connectionReceiver);
-        cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
     }
 
     public static byte[] decryptAES (byte[] ivBytes, byte[] keyBytes,byte[] textBytes) {

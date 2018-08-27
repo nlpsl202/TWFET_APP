@@ -18,8 +18,6 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.example.user.twfet_app.R;
-
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -29,7 +27,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * Created by USER on 2015/11/19.
+ * Created by jeff.
  */
 public class OfflineTickets extends Activity {
     private static final String key="SET31275691$00000000000000000000";
@@ -48,6 +46,7 @@ public class OfflineTickets extends Activity {
     //RFID
     NfcAdapter mNfcAdapter;
     PendingIntent mPendingIntent;
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -78,11 +77,12 @@ public class OfflineTickets extends Activity {
                     String iv = qr.substring(qr.length() - 16);
                     byte[] descryptBytes = decryptAES(iv.getBytes("UTF-8"), key.getBytes("UTF-8"), Base64.decode(a, Base64.DEFAULT));
                     String getdata = new String(descryptBytes);
+                    String ary[]=getdata.split("@");
                     String inTime="";
                     Calendar c = Calendar.getInstance();
                     SimpleDateFormat df4 = new SimpleDateFormat("HHmm");
-                    if((getdata.split("@").length>=7)) {
-                        inTime=getdata.split("@")[6];
+                    if(ary.length>=7) {
+                        inTime=ary[6];
                         if (inTime != null && !inTime.equals("") && Integer.parseInt(inTime.replace(":", "")) > Integer.parseInt(df4.format(c.getTime()))) {
                             FailedLayout.setVisibility(View.VISIBLE);
                             setResultText(result = "票券狀態    ");
@@ -90,8 +90,8 @@ public class OfflineTickets extends Activity {
                             return;
                         }
                     }
-                    TICKET_NO = getdata.split("@")[4];
-                    TK_CODE = getdata.split("@")[5];
+                    TICKET_NO = ary[4];
+                    TK_CODE = ary[5];
                     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
                     SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
                     SimpleDateFormat df3 = new SimpleDateFormat("yyyy-MM-dd");
@@ -102,7 +102,11 @@ public class OfflineTickets extends Activity {
                         setResultText2(result = "此票券已入場！");
                     } else {
                         FailedLayout.setVisibility(View.GONE);
-                        setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " + TICKET_NO + "\n\n票券種類    " + mydbHelper.GetTKName(TK_CODE) + "\n\n票券入場紀錄\n\n" + df.format(c.getTime()));
+                        if((TICKET_NO.substring(0,2).equals("OG")||TICKET_NO.substring(0,2).equals("OK")||TICKET_NO.substring(0,2).equals("OJ")) && ary.length>=8){
+                            setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " +TICKET_NO+ "\n\n票券種類    " +mydbHelper.GetTKName(TK_CODE)+ "\n\n人數            "+ ary[7] +"\n\n票券入場紀錄\n\n"+df.format(c.getTime()));
+                        }else{
+                            setResultText(result = "票券狀態    驗票成功" + "\n\n票券號碼    " + TICKET_NO + "\n\n票券種類    " + mydbHelper.GetTKName(TK_CODE) + "\n\n票券入場紀錄\n\n" + df.format(c.getTime()));
+                        }
                         ResultArray[0] = "A";
                         ResultArray[1] = TICKET_NO;
                         ResultArray[2] = SPS_ID;
@@ -154,6 +158,7 @@ public class OfflineTickets extends Activity {
                         FailedLayout.setVisibility(View.VISIBLE);
                         setResultText(result = "票券狀態    ");
                         setResultText2(result = "非花博票券條碼！");
+                        WriteLog.appendLog("OfflineTickets.java/getTagInfo/Exception:" + ex.toString());
                     }
                 }
             }
@@ -236,6 +241,7 @@ public class OfflineTickets extends Activity {
             setResultText(result = "票券狀態    ");
             setResultText2(result = "非花博票券條碼！");
             ResultTxt2.setTextColor(Color.RED);
+            WriteLog.appendLog("OfflineTickets.java/getTagInfo/Exception:" + ex.toString());
         }
     }
 

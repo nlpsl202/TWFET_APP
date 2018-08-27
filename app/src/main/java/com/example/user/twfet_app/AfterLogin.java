@@ -18,13 +18,11 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.user.twfet_app.R;
-
 import java.sql.CallableStatement;
 import java.sql.Connection;
 
 /**
- * Created by USER on 2015/11/17.
+ * Created by jeff.
  */
 public class AfterLogin extends Activity {
 
@@ -156,11 +154,21 @@ public class AfterLogin extends Activity {
                 startActivity(callSub);
             }
         });
+    }//END ONCREATE
 
+    @Override
+    protected void onResume() {
+        super.onResume();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(connectionReceiver, intentFilter);
-    }//END ONCREATE
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(connectionReceiver);
+    }
 
     //定時計算驗票人數
     private Runnable insertToHandInCount = new Runnable() {
@@ -187,12 +195,6 @@ public class AfterLogin extends Activity {
         return cManager.getActiveNetworkInfo() != null;
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unregisterReceiver(connectionReceiver);
-    }
-
     private final BroadcastReceiver connectionReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -204,7 +206,7 @@ public class AfterLogin extends Activity {
                 OfflineExportBtn.setEnabled(true);
                 InternetStatusTxt.setText("已連線");
                 InternetStatusTxt.setTextColor(Color.parseColor("#4caf50"));
-                Toast.makeText(AfterLogin.this, "已連線", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(AfterLogin.this, "已連線", Toast.LENGTH_SHORT).show();
             } else {
                 OnlineTicketBtn.setEnabled(false);
                 OnlineTicketCheckBtn.setEnabled(false);

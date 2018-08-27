@@ -16,7 +16,7 @@
       <scope value="GLOBAL" />
       <destination value="FILE" />
       <format value="EXCEL" />
-      <charset value="UTF-8" />
+      <charset value="x-windows-950" />
     </export-instructions>
   </component>
   <component name="DBNavigator.Project.DatabaseBrowserManager">
@@ -24,22 +24,22 @@
     <autoscroll-from-editor value="true" />
     <show-object-properties value="true" />
     <loaded-nodes>
-      <connection connection-id="7d898d0e-ee03-4b14-ab4e-d4ead334d5b5">
-        <schema name="main" object-types="table" />
+      <connection connection-id="a5dbbb8b-1033-4e79-bcb5-7c37def01ca2">
+        <schema name="main" object-types="column, constraint, index, table, dataset trigger, view" />
       </connection>
     </loaded-nodes>
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
-    <connection id="7d898d0e-ee03-4b14-ab4e-d4ead334d5b5">
+    <connection id="a5dbbb8b-1033-4e79-bcb5-7c37def01ca2">
       <console name="Connection" type="STANDARD" />
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
-    <connection id="7d898d0e-ee03-4b14-ab4e-d4ead334d5b5" />
+    <connection id="a5dbbb8b-1033-4e79-bcb5-7c37def01ca2" />
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">
-    <filter-list connection-id="7d898d0e-ee03-4b14-ab4e-d4ead334d5b5" dataset="main.cStationConf" active-filter-id="a45bb9fa-ed8e-4cab-ad07-15e3741d8c4e">
-      <filter id="a45bb9fa-ed8e-4cab-ad07-15e3741d8c4e" name="Filter 1" temporary="false" custom-name="false" type="basic" join-type="AND" />
+    <filter-list connection-id="a5dbbb8b-1033-4e79-bcb5-7c37def01ca2" dataset="main.cConnectIP" active-filter-id="f92c00cf-4e8a-41a3-8516-26d57b54b52b">
+      <filter id="f92c00cf-4e8a-41a3-8516-26d57b54b52b" name="Filter 1" temporary="false" custom-name="false" type="basic" join-type="AND" />
     </filter-list>
   </component>
   <component name="DBNavigator.Project.EditorStateManager">
@@ -65,7 +65,7 @@
   </component>
   <component name="DBNavigator.Project.Settings">
     <connections>
-      <connection id="7d898d0e-ee03-4b14-ab4e-d4ead334d5b5" active="true">
+      <connection id="a5dbbb8b-1033-4e79-bcb5-7c37def01ca2" active="true">
         <database>
           <name value="Connection" />
           <description value="" />
@@ -80,7 +80,7 @@
           <port value="" />
           <database value="" />
           <files>
-            <file path="$USER_HOME$/Documents/AndroidStudio/DeviceExplorer/emulator-5554/data/data/com.example.user.twfet_app/databases/mydata.db" schema="main" />
+            <file path="D:\mydata.db" schema="main" />
           </files>
           <os-authentication value="false" />
           <empty-password value="false" />
@@ -110,7 +110,6 @@
           <restore-workspace-deep value="true" />
           <environment-type value="default" />
           <idle-time-to-disconnect value="30" />
-          <idle-time-to-disconnect-pool value="5" />
           <password-expiry-time value="10" />
           <max-connection-pool-size value="7" />
           <alternative-statement-delimiter value="" />

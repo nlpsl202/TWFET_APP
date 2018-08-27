@@ -10,10 +10,12 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 /**
- * Created by USER on 2015/11/17.
+ * Created by jeff.
  */
 public class MyDBHelper extends SQLiteOpenHelper {
     protected ArrayList<String[]> Result = null;
@@ -272,7 +274,9 @@ public class MyDBHelper extends SQLiteOpenHelper {
 
     //刪除UltraLight03資料庫
     public void DeleteUltraLight03() {
-        String statement = "delete from pUltraLight03";
+        Calendar c = Calendar.getInstance();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String statement = "delete from pUltraLight03 where TK_ENTER_DT not like '" + df.format(c.getTime()) + "%'";
         Log.d("Delete", statement);
         super.getWritableDatabase().execSQL(statement);
         super.close();

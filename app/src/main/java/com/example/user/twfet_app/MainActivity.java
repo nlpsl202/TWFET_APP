@@ -16,8 +16,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.example.user.twfet_app.R;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,6 +26,9 @@ import java.sql.Statement;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Created by jeff.
+ */
 public class MainActivity extends Activity {
     EditText DEVICE_ID_Edt;
     Button btnlogin;

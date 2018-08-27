@@ -1,9 +1,5 @@
 package com.example.user.twfet_app;
 
-/**
- * Created by USER on 2015/11/17.
- */
-
 import android.annotation.SuppressLint;
 import android.os.StrictMode;
 import android.util.Log;
@@ -13,7 +9,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Created by USER on 2015/11/2.
+ * Created by jeff.
  */
 public class ConnectionClass {
     static String ip="172.16.30.181";
