@@ -30,23 +30,25 @@ public class ConnectionClass {
 
     @SuppressLint("NewApi")
     public static Connection CONN() {
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-                .permitAll().build();
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
         Connection conn = null;
-        String ConnURL = null;
+        String ConnURL;
         try {
             Class.forName(classs);
             ConnURL = "jdbc:jtds:sqlserver://" + ip + ";"
                     + "databaseName=" + db + ";charset=utf8;user=" + un + ";password="
                     + password + ";";
             conn = DriverManager.getConnection(ConnURL);
-        } catch (SQLException se) {
-            Log.e("ERRO", se.getMessage());
+        } catch (SQLException e) {
+            Log.e("ERRO", e.getMessage());
+            WriteLog.appendLog("ConnectionClass.java/CONN/Exception:" + e.toString());
         } catch (ClassNotFoundException e) {
             Log.e("ERRO", e.getMessage());
+            WriteLog.appendLog("ConnectionClass.java/CONN/Exception:" + e.toString());
         } catch (Exception e) {
             Log.e("ERRO", e.getMessage());
+            WriteLog.appendLog("ConnectionClass.java/CONN/Exception:" + e.toString());
         }
         return conn;
     }

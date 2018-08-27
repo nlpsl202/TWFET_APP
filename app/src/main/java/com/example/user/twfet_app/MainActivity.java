@@ -16,7 +16,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.example.user.afc_nmp.R;
+import com.example.user.twfet_app.R;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
     Statement stmt;
 
     //SQLite
-    private MyDBHelper mydbHelper;
+    MyDBHelper mydbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +48,7 @@ public class MainActivity extends Activity {
 
         DEVICE_ID_Edt = (EditText) findViewById(R.id.DEVICE_ID_Edt);
         btnlogin = (Button) findViewById(R.id.LoginBtn);
+
         mydbHelper = new MyDBHelper(this);
 
         if(!mydbHelper.GetConnectIP().equals("") && !mydbHelper.GetConnectUN().equals("") && !mydbHelper.GetConnectPASSWORD().equals("")) {

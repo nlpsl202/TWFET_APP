@@ -5,7 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 
-import com.example.user.afc_nmp.R;
+import com.example.user.twfet_app.R;
 
 public class Splash extends Activity {
 

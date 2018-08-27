@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 /**
- * Created by USER on 2015/12/19.
+ * Created by jeff.
  */
 public class WriteLog
 {
