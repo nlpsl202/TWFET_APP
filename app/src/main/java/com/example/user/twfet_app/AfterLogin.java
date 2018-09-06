@@ -39,7 +39,7 @@ public class AfterLogin extends Activity {
     Dialog alertDialog;
 
     //定時上傳驗票人數
-    static long mainTimerInterval = 10000; //預設300秒
+    static long mainTimerInterval = 300000; //預設300秒
     Handler handler = new Handler();
 
     protected void onCreate(Bundle savedInstanceState) {

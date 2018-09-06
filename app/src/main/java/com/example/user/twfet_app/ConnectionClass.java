@@ -12,16 +12,16 @@ import java.sql.SQLException;
  * Created by jeff.
  */
 public class ConnectionClass {
-    static String ip="172.16.30.181";
-    static String classs = "net.sourceforge.jtds.jdbc.Driver";
-    static String db = "TWFET_CDPS";
-    static String un = "sa";
-    static String password = "hokawaCdps";
-    //static String ip="192.168.10.193";
+    //static String ip="172.16.30.181";
     //static String classs = "net.sourceforge.jtds.jdbc.Driver";
     //static String db = "TWFET_CDPS";
-    //static String un = "TWFET";
-    //static String password = "Mds31275691$";
+    //static String un = "sa";
+    //static String password = "hokawaCdps";
+    static String ip="192.168.10.193";
+    static String classs = "net.sourceforge.jtds.jdbc.Driver";
+    static String db = "TWFET_CDPS";
+    static String un = "TWFET";
+    static String password = "Mds31275691$";
 
 
     @SuppressLint("NewApi")

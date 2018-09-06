@@ -320,7 +320,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
                     CREATEID = rs.getString("CREATEID");
                     MODIFYDT = rs.getString("MODIFYDT");
                     MODIFYID = rs.getString("MODIFYID");
-                    String statement = "update cStationConf set SPS_ID = '" + SPS_ID + "' ,SPS_NAME= '" + SPS_NAME + "' ,SPS_SDATE = '" + SPS_SDATE + "' , SPS_EDATE = '" + SPS_EDATE + "',SYNCTIME = '" + SYNCTIME + "' , CREATEDT = '" + CREATEDT + "' , CREATEID = '" + CREATEID + "' , MODIFYDT = '" + MODIFYDT + "' , MODIFYID = '" + MODIFYID + "' where SPS_ID ='" + SPS_ID + "'";
+                    String statement = "update cSpsInfo set SPS_ID = '" + SPS_ID + "' ,SPS_NAME= '" + SPS_NAME + "' ,SPS_SDATE = '" + SPS_SDATE + "' , SPS_EDATE = '" + SPS_EDATE + "',SYNCTIME = '" + SYNCTIME + "' , CREATEDT = '" + CREATEDT + "' , CREATEID = '" + CREATEID + "' , MODIFYDT = '" + MODIFYDT + "' , MODIFYID = '" + MODIFYID + "' where SPS_ID ='" + SPS_ID + "'";
                     super.getWritableDatabase().execSQL(statement);
                 }
                 super.close();
@@ -615,6 +615,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
         return bol;
     }
 
+    //取得全期間圖片
     public byte[] GetByte(String FT_SERIALNO) {
         byte[] image = null;
         Connection con = ConnectionClass.CONN();

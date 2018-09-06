@@ -2,12 +2,15 @@ package com.example.user.twfet_app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Service;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -27,7 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by jeff.
+ * Created by Jeff.
  */
 public class MainActivity extends Activity {
     EditText DEVICE_ID_Edt;
@@ -40,6 +43,10 @@ public class MainActivity extends Activity {
 
     //SQLite
     MyDBHelper mydbHelper;
+
+    //剪貼簿
+    private ClipboardManager cbMgr;
+    private ClipboardManager.OnPrimaryClipChangedListener mPrimaryClipChangedListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +79,35 @@ public class MainActivity extends Activity {
         } else {
             Toast.makeText(MainActivity.this, "資料庫已更新。", Toast.LENGTH_SHORT).show();
         }
+
+        //掃描驗票
+        cbMgr = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        mPrimaryClipChangedListener = new ClipboardManager.OnPrimaryClipChangedListener() {
+            public void onPrimaryClipChanged() {
+                try {
+                    DEVICE_ID_Edt.setText("");
+                    setVibrate(100);
+                    DEVICE_ID=cbMgr.getPrimaryClip().getItemAt(0).getText().toString();
+                    if(DEVICE_ID.split("@").length==3){
+                        if(isIP(DEVICE_ID.split("@")[0])){
+                            mydbHelper.InsertToConnectIP(DEVICE_ID.split("@")[0],DEVICE_ID.split("@")[1],DEVICE_ID.split("@")[2]);
+                            Toast.makeText(MainActivity.this, "連線資料更新成功！", Toast.LENGTH_SHORT).show();
+                        }
+                    }else if(!mydbHelper.CheckExistDEVICE_ID(DEVICE_ID)){
+                        Toast.makeText(MainActivity.this, "無此設備代碼", Toast.LENGTH_SHORT).show();
+                    }else{
+                        SPS_ID=DEVICE_ID.substring(0,4);
+                        Intent intenting = new Intent();
+                        intenting.setClass(MainActivity.this, AfterLogin.class);
+                        intenting.putExtra("DEVICE_ID",DEVICE_ID);//傳遞DEVICE_ID給登入後的頁面
+                        intenting.putExtra("SPS_ID",SPS_ID);//傳遞SPS_ID給登入後的頁面
+                        startActivityForResult(intenting,0);
+                    }
+                } catch (Exception ex) {
+                }
+            }
+        };
+        cbMgr.addPrimaryClipChangedListener(mPrimaryClipChangedListener);
 
         btnlogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,6 +148,19 @@ public class MainActivity extends Activity {
         } else {
             Toast.makeText(MainActivity.this, "資料庫已更新。", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
+        cbMgr.addPrimaryClipChangedListener(mPrimaryClipChangedListener);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
     }
 
     //檢查場站的cSpsInfo是否有進行更新
@@ -282,6 +331,12 @@ public class MainActivity extends Activity {
         };
         int requestCode = 200;
         requestPermissions(permissions, requestCode);
+    }
+
+    //震動
+    public void setVibrate(int time) {
+        Vibrator myVibrator = (Vibrator) getSystemService(Service.VIBRATOR_SERVICE);
+        myVibrator.vibrate(time);
     }
 
     protected boolean shouldAskPermissions() {
