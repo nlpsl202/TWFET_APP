@@ -91,6 +91,12 @@ public class OfflineTickets extends Activity {
                         }
                     }
                     TICKET_NO = ary[4];
+                    if(TICKET_NO.substring(0,2).equals("OD")  && Integer.parseInt(df4.format(c.getTime())) < 1600){
+                        FailedLayout.setVisibility(View.VISIBLE);
+                        setResultText(result = "票券狀態    ");
+                        setResultText2(result = "未到入場時間！");
+                        return;
+                    }
                     TK_CODE = ary[5];
                     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
                     SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -154,11 +160,11 @@ public class OfflineTickets extends Activity {
                             setResultText2(result = "非花博票券條碼！");
                         }
                     }
-                    catch (Exception e) {
+                    catch (Exception ex2) {
                         FailedLayout.setVisibility(View.VISIBLE);
                         setResultText(result = "票券狀態    ");
                         setResultText2(result = "非花博票券條碼！");
-                        WriteLog.appendLog("OfflineTickets.java/getTagInfo/Exception:" + ex.toString());
+                        WriteLog.appendLog("OfflineTickets.java/getTagInfo/Exception:" + ex2.toString());
                     }
                 }
             }
@@ -168,14 +174,14 @@ public class OfflineTickets extends Activity {
         ReturnBtn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                finish();
+                OfflineTickets.this.finish();
             }
         });
 
         HomeBtn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                finish();
+                OfflineTickets.this.finish();
             }
         });
 
@@ -215,7 +221,7 @@ public class OfflineTickets extends Activity {
             SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMddHHmmss");
             Calendar c = Calendar.getInstance();
             String[] ResultArray = new String[11];
-            if(tagNo.length()==14){
+            if(tagNo.length()==14 || tagNo.length()==8){
                 FailedLayout.setVisibility(View.GONE);
                 setResultText(result = "票券狀態    驗票成功\n\n票券種類    全期間票");
                 ResultArray[0] = "D";

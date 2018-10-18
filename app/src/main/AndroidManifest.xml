@@ -49,5 +49,10 @@
             android:name="com.example.user.twfet_app.OnlineTicketsCheck"
             android:screenOrientation="portrait">
         </activity>
+        <receiver android:name=".NetworkChangeReceiver" >
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

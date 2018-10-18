@@ -23,8 +23,8 @@ public class MyDBHelper extends SQLiteOpenHelper {
     protected String CREATE_CSTATIONCONF = "create table if not exists cStationConf(DEVICE_ID text NOT NULL, DeviceTypeID text, SPS_ID text,MCNO text, IP text,MACMFRC text, IMEI_CODE text,TRANSFER_STATUS text, SYNCTIME text, CREATEID text, CREATEDT text, MODIFYID text,MODIFYDT text,PRIMARY KEY (DEVICE_ID))";
     protected String CREATE_CTicketKind = "create table if not exists cTicketKind(TK_CODE text NOT NULL, TK_NAME text NOT NULL, TK_NAME_ENG text, TK_NAME_JAP text, TK_PRICE Integer,TK_BACK_FEE Integer,TK_DAYS text,TK_START_TM text,TK_UNTIL_TM text,SP_MEMO text, SYNCTIME text, CREATEDT text, CREATEID text, MODIFYDT text,MODIFYID text,PRIMARY KEY (TK_CODE))";
     protected String CREATE_ConnectIP = "create table if not exists cConnectIP(IP text NOT NULL,UN text NOT NULL,PASSWORD text NOT NULL,PRIMARY KEY (IP))";
-    protected String CREATE_PULTRALIGHT03 = "create table if not exists pUltraLight03(TICKET_TYPE text NOT NULL, TICKET_NO text, SPS_ID text NOT NULL, TK_ENTER_DT text NOT NULL, IN_OUT_TYPE text NOT NULL, DEVICE_ID text NOT NULL, TK_CODE text, QRCODE text , INSERT_DB_DATETIME text, TRANSFER_STATUS text, CREATEID text, CREATEDT text, MODIFYID text,MODIFYDT text,FT_SERIALNO text,PRIMARY KEY (TICKET_TYPE,TICKET_NO,SPS_ID,TK_ENTER_DT))";
-    protected String CREATE_PULTRALIGHT03_EXP = "create table if not exists pUltraLight03Exp(TICKET_TYPE text NOT NULL, TICKET_NO text, SPS_ID text NOT NULL, TK_ENTER_DT text NOT NULL, IN_OUT_TYPE text NOT NULL, DEVICE_ID text NOT NULL, TK_CODE text, QRCODE text , INSERT_DB_DATETIME text, TRANSFER_STATUS text, CREATEID text, CREATEDT text, MODIFYID text,MODIFYDT text,FT_SERIALNO text,PRIMARY KEY (TICKET_TYPE,TICKET_NO,SPS_ID,TK_ENTER_DT))";
+    protected String CREATE_PULTRALIGHT03 = "create table if not exists pUltraLight03(TICKET_TYPE text NOT NULL, TICKET_NO text, SPS_ID text NOT NULL, TK_ENTER_DT text NOT NULL, IN_OUT_TYPE text NOT NULL, DEVICE_ID text NOT NULL, TK_CODE text, QRCODE text , INSERT_DB_DATETIME text, TRANSFER_STATUS text, CREATEID text, CREATEDT text, MODIFYID text,MODIFYDT text,FT_SERIALNO text,Rec INTEGER PRIMARY KEY AUTOINCREMENT)";
+    protected String CREATE_PULTRALIGHT03_EXP = "create table if not exists pUltraLight03Exp(TICKET_TYPE text NOT NULL, TICKET_NO text, SPS_ID text NOT NULL, TK_ENTER_DT text NOT NULL, IN_OUT_TYPE text NOT NULL, DEVICE_ID text NOT NULL, TK_CODE text, QRCODE text , INSERT_DB_DATETIME text, TRANSFER_STATUS text, CREATEID text, CREATEDT text, MODIFYID text,MODIFYDT text,FT_SERIALNO text,Rec INTEGER PRIMARY KEY AUTOINCREMENT)";
 
     private final static String DATABASE_NAME = "mydata.db";
     private final static int DATABASE_VERSION = 1;
@@ -181,7 +181,6 @@ public class MyDBHelper extends SQLiteOpenHelper {
     public int GetUltraLight03Number() {
         int result = 0;
         Cursor cursor = super.getReadableDatabase().rawQuery("SELECT  COUNT(*) FROM pUltraLight03 ", null);
-
         if (cursor.moveToNext()) {
             result = cursor.getInt(0);
         }
@@ -189,7 +188,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
     }
 
     //取得SQLite的UltraLight03內TRANSFER_STATUS不為OK資料數量
-    public int GetUltraLight03NOTOKNumber() {
+    public int GetUltraLight03NotOkNumber() {
         int result = 0;
         Cursor cursor = super.getReadableDatabase().rawQuery("SELECT  COUNT(*) FROM pUltraLight03 where TRANSFER_STATUS<>'OK' ", null);
         if (cursor.moveToNext()) {
@@ -244,18 +243,6 @@ public class MyDBHelper extends SQLiteOpenHelper {
         return TK_NAME;
     }
 
-    //取得SQLite的UltraLight03今日日期資料
-    public Cursor GetUltraLight03() {
-        int result = 0;
-        Cursor cursor = super.getReadableDatabase().rawQuery("SELECT  TICKET_NO as _id ,TK_ENTER_DT,IN_OUT_TYPE,DEVICE_ID,TK_CODE ,QRCODE ,INSERT_DB_DATETIME,TRANSFER_STATUS,CREATEID,CREATEDT, MODIFYID ,MODIFYDT FROM pUltraLight03 ", null);
-        //因為抓出來的資料儲存到SIMPLELISTADAPTER一定要用到_ID這個，因此將TICKET_NO當作是_ID
-        while (cursor.moveToNext()) {
-            Log.d("MDB.ja/GtU03", "_id：" + cursor.getString(0));//TICKET_NO
-            Log.d("MDB.ja/GtU03", "TK_ENTER_DT：" + cursor.getString(1));
-        }
-        return cursor;
-    }
-
     //刪除StationConf資料庫
     public void DeleteStationConf() {
         String statement = "delete from cStationConf";
@@ -277,7 +264,6 @@ public class MyDBHelper extends SQLiteOpenHelper {
         Calendar c = Calendar.getInstance();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         String statement = "delete from pUltraLight03 where TK_ENTER_DT not like '" + df.format(c.getTime()) + "%'";
-        Log.d("Delete", statement);
         super.getWritableDatabase().execSQL(statement);
         super.close();
     }
@@ -285,7 +271,6 @@ public class MyDBHelper extends SQLiteOpenHelper {
     //刪除UltraLight03Exp資料庫
     public void DeleteUltraLight03Exp() {
         String statement = "delete from pUltraLight03Exp";
-        Log.d("Delete", statement);
         super.getWritableDatabase().execSQL(statement);
         super.close();
     }
@@ -394,18 +379,6 @@ public class MyDBHelper extends SQLiteOpenHelper {
         }
     }
 
-    //取得票券入場時間
-    public String selectUltraLight03ENTER_DT(String TICKET_NO, String SPS_ID) {
-        String TK_ENTER_DT = "";
-        //使用 rawQuery 方法
-        Cursor cursor = super.getReadableDatabase().rawQuery("select TK_ENTER_DT from pUltraLight03 where TICKET_NO=? and SPS_ID=?", new String[]{TICKET_NO, SPS_ID});
-        while (cursor.moveToNext()) {
-            TK_ENTER_DT = cursor.getString(0);
-        }
-        cursor.close();
-        return TK_ENTER_DT;
-    }
-
     //判斷SQLITE的UltraLight03是否已存此TIKCE_NO
     public boolean IsTICKETNOexist(String TICKET_NO, String SPS_ID, String TK_ENTER_DT) {
         //使用 rawQuery 方法
@@ -431,9 +404,9 @@ public class MyDBHelper extends SQLiteOpenHelper {
     }
 
     //更新SQLITE的UltraLight03的TRANSFER_STATUS為OK
-    public void UpdateUltraLight03TRS(String QRCODE, String SPS_ID, String TK_ENTER_DT, String FT_SERIALNO) {
+    public void UpdateUltraLight03TRS(int Rec) {
         //使用 rawQuery 方法
-        String statement = "update pUltraLight03 set TRANSFER_STATUS ='OK' where TRANSFER_STATUS<>'OK' and (QRCODE='" + QRCODE + "' or FT_SERIALNO='" + FT_SERIALNO + "')  and SPS_ID='" + SPS_ID + "' and TK_ENTER_DT='" + TK_ENTER_DT + "'";
+        String statement = "update pUltraLight03 set TRANSFER_STATUS ='OK' where Rec="+Rec;
         super.getWritableDatabase().execSQL(statement);
         super.close();
     }
@@ -441,10 +414,9 @@ public class MyDBHelper extends SQLiteOpenHelper {
     //取得SQLite的UltraLight03Exp的總數量
     public int GetUltraLight03ExpNmber() {
         int GetNumber = 0;
-        Cursor cursor = super.getReadableDatabase().rawQuery("SELECT * FROM pUltraLight03Exp", null);
-        //因為抓出來的資料儲存到SIMPLELISTADAPTER一定要用到_ID這個，因此將TICKET_NO當作是_ID
+        Cursor cursor = super.getReadableDatabase().rawQuery("SELECT count(*) FROM pUltraLight03Exp", null);
         while (cursor.moveToNext()) {
-            GetNumber++;
+            GetNumber = cursor.getInt(0);
         }
         return GetNumber;
     }
@@ -453,27 +425,26 @@ public class MyDBHelper extends SQLiteOpenHelper {
     public void SelectFromUltraLight03() {
         Connection con = ConnectionClass.CONN();
         String result_msg = "";
-        Cursor cursor = super.getReadableDatabase().rawQuery("SELECT  TICKET_TYPE ,TICKET_NO,SPS_ID,TK_ENTER_DT,IN_OUT_TYPE,DEVICE_ID,TK_CODE,QRCODE,INSERT_DB_DATETIME,TRANSFER_STATUS ,CREATEID,CREATEDT,MODIFYID,MODIFYDT,FT_SERIALNO FROM pUltraLight03 where TRANSFER_STATUS <>'OK' ", null);
+        Cursor cursor = super.getReadableDatabase().rawQuery("SELECT * FROM pUltraLight03 where TRANSFER_STATUS <>'OK'", null);
         while (cursor.moveToNext()) {
             result_msg = executeExportStoredProcedure(con, cursor.getString(0), cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getString(4), cursor.getString(5), cursor.getString(6), cursor.getString(7), cursor.getString(8), cursor.getString(9), cursor.getString(10), cursor.getString(11), cursor.getString(12), cursor.getString(13), cursor.getString(14));
             if (result_msg.indexOf("成功") > -1) {//如果有新增成功
                 //新增至EXP資料表，用來計算有幾筆上傳成功
-                InsertToUltraLight03Exp(cursor.getString(0), cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getString(4), cursor.getString(5), cursor.getString(6), cursor.getString(7), cursor.getString(8), cursor.getString(9), cursor.getString(10), cursor.getString(11), cursor.getString(12), cursor.getString(13));
+                InsertToUltraLight03Exp(cursor.getString(0), cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getString(4), cursor.getString(5), cursor.getString(6), cursor.getString(7), cursor.getString(8), cursor.getString(9), cursor.getString(10), cursor.getString(11), cursor.getString(12), cursor.getString(13), cursor.getString(14));
                 //更新此票券的TRANSFER_STATUS為OK
-                UpdateUltraLight03TRS(cursor.getString(7), cursor.getString(2), cursor.getString(3), cursor.getString(14));
+                UpdateUltraLight03TRS(cursor.getInt(15));
             } else if (result_msg.indexOf("失敗") > -1 || result_msg.indexOf("衝突") > -1) {//如果新增失敗
                 //刪除此筆資料
-                String statement = "delete from pUltraLight03 where FT_SERIALNO='" + cursor.getString(14) + "' or QRCODE='" + cursor.getString(7) + "'";
-                Log.d("Delete", statement);
+                String statement = "delete from pUltraLight03 where Rec=" + cursor.getInt(15);
                 super.getWritableDatabase().execSQL(statement);
-                super.close();
             }
         }
     }
 
     //執行匯出SP_
     public String executeExportStoredProcedure(Connection con, String TICKET_TYPE, String TICKET_NO, String SPS_ID, String TK_ENTER_DT, String IN_OUT_TYPE,
-                                               String DEVICE_ID, String TK_CODE, String QRCODE, String INSERT_DB_DATETIME, String TRANSFER_STATUS, String CREATEID, String CREATEDT, String MODIFYID, String MODIFYDT, String FT_SERIALNO) {
+                                               String DEVICE_ID, String TK_CODE, String QRCODE, String INSERT_DB_DATETIME, String TRANSFER_STATUS, String CREATEID,
+                                               String CREATEDT, String MODIFYID, String MODIFYDT, String FT_SERIALNO) {
         String RETURN_MSG = "";
         try {
             CallableStatement cstmt = con.prepareCall("{ call dbo.SP_HD_UpLoad_pUltraLight03(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}");
@@ -494,16 +465,13 @@ public class MyDBHelper extends SQLiteOpenHelper {
             cstmt.setString("MODIFYDT", MODIFYDT);
             cstmt.registerOutParameter(16, java.sql.Types.VARCHAR);
             cstmt.execute();
-            //接收回傳參數
             RETURN_MSG = cstmt.getString(16);
-            //LOG紀錄
-            Log.d("MyDB.java/匯出", "RETURN_MSG：" + RETURN_MSG);
             cstmt.close();
             return RETURN_MSG;
-        } catch (Exception e) {
-            Log.d("MyDB.java/匯出SP", e.toString());
-            WriteLog.appendLog("MyDBHelper.java/匯出SP/Exception:" + e.toString());
-            e.printStackTrace();
+        } catch (Exception ex) {
+            Log.d("MyDB.java/匯出SP", ex.toString());
+            WriteLog.appendLog("MyDBHelper.java/匯出SP/Exception:" + ex.toString());
+            ex.printStackTrace();
         }
         return RETURN_MSG;
     }
@@ -511,13 +479,13 @@ public class MyDBHelper extends SQLiteOpenHelper {
     //將已匯出資料儲存至pUltraLight03Exp
     public void InsertToUltraLight03Exp(String TICKET_TYPE, String TICKET_NO, String SPS_ID, String TK_ENTER_DT, String IN_OUT_TYPE, String DEVICE_ID,
                                         String TK_CODE, String QRCODE, String INSERT_DB_DATETIME, String TRANSFER_STATUS, String CREATEID,
-                                        String CREATEDT, String MODIFYID, String MODIFYDT) {
-        String statement = "insert into pUltraLight03Exp (TICKET_TYPE,TICKET_NO,SPS_ID,TK_ENTER_DT,IN_OUT_TYPE,DEVICE_ID,TK_CODE ,QRCODE,INSERT_DB_DATETIME,TRANSFER_STATUS,CREATEID,CREATEDT,MODIFYID,MODIFYDT)" +
-                "values('" + TICKET_TYPE + "','" + TICKET_NO + "','" + SPS_ID + "','" + TK_ENTER_DT + "','" + IN_OUT_TYPE + "','" + DEVICE_ID + "','" + TK_CODE + "','" + QRCODE + "','" + INSERT_DB_DATETIME + "','" + TRANSFER_STATUS + "','" + CREATEID + "','" + CREATEDT + "','" + MODIFYID + "','" + MODIFYDT + "')";
+                                        String CREATEDT, String MODIFYID, String MODIFYDT, String FT_SERIALNO) {
+        String statement = "insert into pUltraLight03Exp (TICKET_TYPE,TICKET_NO,SPS_ID,TK_ENTER_DT,IN_OUT_TYPE,DEVICE_ID,TK_CODE ,QRCODE,INSERT_DB_DATETIME,TRANSFER_STATUS,CREATEID,CREATEDT,MODIFYID,MODIFYDT,FT_SERIALNO)" +
+                "values('" + TICKET_TYPE + "','" + TICKET_NO + "','" + SPS_ID + "','" + TK_ENTER_DT + "','" + IN_OUT_TYPE + "','" + DEVICE_ID + "','" + TK_CODE + "','" + QRCODE + "','" + INSERT_DB_DATETIME + "','" + TRANSFER_STATUS + "','" + CREATEID + "','" + CREATEDT + "','" + MODIFYID + "','" + MODIFYDT + "','" + FT_SERIALNO + "')";
         super.getWritableDatabase().execSQL(statement);
     }
 
-    //執行館內數查詢SP
+    //執行館內人數查詢SP
     public String executePeopleNumStoredProcedure(Connection con, String SPS_ID) {
         String returnNumber = "0";
         try {
@@ -529,29 +497,9 @@ public class MyDBHelper extends SQLiteOpenHelper {
             }
             cstmt.close();
             return returnNumber;
-        } catch (Exception e) {
+        } catch (Exception ex) {
             return returnNumber;
         }
-        /*String RETURN_MSG="";
-        try {
-            CallableStatement cstmt = con.prepareCall("{ call dbo.SP_HAND_CrowdInOut(?,?,?)}");
-
-            cstmt.setString("START",null);
-            cstmt.setString("END",null);
-            cstmt.registerOutParameter(3, java.sql.Types.VARCHAR);
-            cstmt.execute();
-            //接收回傳參數
-            RETURN_MSG = cstmt.getString(3);
-            //LOG紀錄
-            Log.d("MyDB.java/館內人數SP", "RETURN_MSG：" + RETURN_MSG);
-            cstmt.close();
-            return RETURN_MSG;
-        }
-        catch (Exception e) {
-            Log.d("MyDB.java/查詢館內人數SP", e.toString());
-            WriteLog.appendLog("MyDBHelper.java/查詢館內人數SP/Exception:" + e.toString());
-        }
-        return  RETURN_MSG;*/
     }
 
     //設定資料庫連線資料存至SQLITE
@@ -559,16 +507,20 @@ public class MyDBHelper extends SQLiteOpenHelper {
         try {
             //先刪除SQLITE內的IP
             String statement = "delete from cConnectIP";
-            Log.d("DeletecConnectIP", statement);
             super.getWritableDatabase().execSQL(statement);
-            super.close();
             //插入新的IP
             String statement2 = "insert into cConnectIP (IP,UN,PASSWORD) values('" + ip.trim() + "','" + un.trim() + "','" + password.trim() + "')";
             super.getWritableDatabase().execSQL(statement2);
+            super.close();
         } catch (Exception ex) {
             Log.d("MyDB.java/資料庫IP存至SQLITE", ex.toString());
             WriteLog.appendLog("MyDBHelper.java/InsertToConnectIP/Exception:" + ex.toString());
         }
+    }
+
+    public Cursor GetConnectInfo() {
+        Cursor cursor = super.getReadableDatabase().rawQuery("select * from cConnectIP", null);
+        return cursor;
     }
 
     //取得資料庫連線IP

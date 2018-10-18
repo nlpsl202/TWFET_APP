@@ -11,8 +11,6 @@ import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.os.Bundle;
@@ -41,15 +39,15 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public class OnlineTickets extends Activity {
     private static final String key = "SET31275691$00000000000000000000";
-    TextView ResultTxt, ResultTxt2, ResultTxt3, PeopleNumTxt;
-    ImageView FtPhotoImage;
-    String result = "", DEVICE_ID, SPS_ID;
-    Button ReturnBtn, HomeBtn;
-    LinearLayout FailedLayout, wifiLayout, rfidLayout;
+    private TextView ResultTxt, ResultTxt2, ResultTxt3, PeopleNumTxt;
+    private ImageView FtPhotoImage;
+    private String result = "", DEVICE_ID, SPS_ID;
+    private Button ReturnBtn, HomeBtn;
+    private LinearLayout FailedLayout, wifiLayout, rfidLayout;
 
     //SQL SERVER
-    ConnectionClass connectionClass;
-    Connection con;
+    private ConnectionClass connectionClass;
+    private Connection con;
 
     //SQLITE
     private MyDBHelper mydbHelper;
@@ -59,9 +57,9 @@ public class OnlineTickets extends Activity {
     private ClipboardManager.OnPrimaryClipChangedListener mPrimaryClipChangedListener;
 
     //RFID
-    NfcAdapter mNfcAdapter;
-    PendingIntent mPendingIntent;
-    Bitmap bitmap;
+    private NfcAdapter mNfcAdapter;
+    private PendingIntent mPendingIntent;
+    private Bitmap bitmap;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,6 +89,11 @@ public class OnlineTickets extends Activity {
         connectionClass = new ConnectionClass();
         con = connectionClass.CONN();
 
+        if (con == null) {
+            OnlineTickets.this.finish();
+            Toast.makeText(OnlineTickets.this, "連線錯誤，請檢查網路狀態", Toast.LENGTH_SHORT).show();
+        }
+
         //查詢館內人數
         PeopleNumTxt.setText("目前園內人數 " + mydbHelper.executePeopleNumStoredProcedure(con, SPS_ID) + " 人");
         PeopleNumTxt.setOnClickListener(new View.OnClickListener() {
@@ -104,11 +107,19 @@ public class OnlineTickets extends Activity {
         wifiLayout.setVisibility(View.GONE);
         rfidLayout.setVisibility(View.GONE);
 
+        connectionClass = new ConnectionClass();
+        con = connectionClass.CONN();
+
         //掃描驗票
         cbMgr = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         mPrimaryClipChangedListener = new ClipboardManager.OnPrimaryClipChangedListener() {
             public void onPrimaryClipChanged() {
-                WriteLog.appendLog("testtt");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        wifiLayout.setVisibility(View.GONE);
+                    }
+                });
                 wifiLayout.setVisibility(View.VISIBLE);
                 rfidLayout.setVisibility(View.GONE);
                 try {
@@ -135,8 +146,6 @@ public class OnlineTickets extends Activity {
                     String TICKET_NO = ary[4];
                     String TK_CODE = ary[5];
 
-                    connectionClass = new ConnectionClass();
-                    con = connectionClass.CONN();
                     CallableStatement cstmt = con.prepareCall("{ call dbo.SP_GATE_CHKCMD(?,?,?,?,?,?,?,?,?,?,?,?)}");
                     cstmt.setString(1, TICKET_NO);
                     cstmt.setString(2, DEVICE_ID.replace('G', 'H'));
@@ -235,11 +244,11 @@ public class OnlineTickets extends Activity {
                             setResultText(result = "票券狀態    ");
                             setResultText2(result = RETURN_MSG);
                         }
-                    } catch (Exception e) {
+                    } catch (Exception ex2) {
                         FailedLayout.setVisibility(View.VISIBLE);
                         setResultText(result = "票券狀態    ");
                         setResultText2(result = "非花博票券條碼！");
-                        WriteLog.appendLog("OnlineTickets.java/ticket/Exception:" + ex.toString());
+                        WriteLog.appendLog("OnlineTickets.java/ticket/Exception:" + ex2.toString());
                     }
                 }
             }
@@ -250,21 +259,16 @@ public class OnlineTickets extends Activity {
         ReturnBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                finish();
+                OnlineTickets.this.finish();
             }
         });
 
         HomeBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                finish();
+                OnlineTickets.this.finish();
             }
         });
-
-        //註冊網路狀態監聽
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(connectionReceiver, intentFilter);
 
         //RFID
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
@@ -279,8 +283,9 @@ public class OnlineTickets extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        //註冊網路狀態監聽
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        intentFilter.addAction(NetworkChangeReceiver.NETWORK_CHANGE_ACTION);
         registerReceiver(connectionReceiver, intentFilter);
         cbMgr.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
         cbMgr.addPrimaryClipChangedListener(mPrimaryClipChangedListener);
@@ -414,11 +419,9 @@ public class OnlineTickets extends Activity {
     private final BroadcastReceiver connectionReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            ConnectivityManager connectMgr = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-            NetworkInfo mNetworkInfo = connectMgr.getActiveNetworkInfo();
-            if (mNetworkInfo == null) {
+            if (intent.getStringExtra("status").contains("Not")) {
                 Toast.makeText(OnlineTickets.this, "連線中斷", Toast.LENGTH_SHORT).show();
-                finish();
+                OnlineTickets.this.finish();
             }
         }
     };

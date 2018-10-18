@@ -17,7 +17,7 @@ public class ConnectionClass {
     //static String db = "TWFET_CDPS";
     //static String un = "sa";
     //static String password = "hokawaCdps";
-    static String ip="192.168.10.193";
+    static String ip="192.168.10.214";
     static String classs = "net.sourceforge.jtds.jdbc.Driver";
     static String db = "TWFET_CDPS";
     static String un = "TWFET";
@@ -36,15 +36,15 @@ public class ConnectionClass {
                     + "databaseName=" + db + ";charset=utf8;user=" + un + ";password="
                     + password + ";";
             conn = DriverManager.getConnection(ConnURL);
-        } catch (SQLException e) {
-            Log.e("ERRO", e.getMessage());
-            WriteLog.appendLog("ConnectionClass.java/CONN/Exception:" + e.toString());
-        } catch (ClassNotFoundException e) {
-            Log.e("ERRO", e.getMessage());
-            WriteLog.appendLog("ConnectionClass.java/CONN/Exception:" + e.toString());
-        } catch (Exception e) {
-            Log.e("ERRO", e.getMessage());
-            WriteLog.appendLog("ConnectionClass.java/CONN/Exception:" + e.toString());
+        } catch (SQLException ex) {
+            Log.e("ERRO", ex.getMessage());
+            WriteLog.appendLog("ConnectionClass.java/CONN/Exception:" + ex.toString());
+        } catch (ClassNotFoundException ex) {
+            Log.e("ERRO", ex.getMessage());
+            WriteLog.appendLog("ConnectionClass.java/CONN/Exception:" + ex.toString());
+        } catch (Exception ex) {
+            Log.e("ERRO", ex.getMessage());
+            WriteLog.appendLog("ConnectionClass.java/CONN/Exception:" + ex.toString());
         }
         return conn;
     }

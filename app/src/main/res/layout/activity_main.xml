@@ -25,6 +25,7 @@
             android:background="@drawable/activity_main_input"
             android:inputType="text"
             android:paddingLeft="40dp"
+            android:paddingRight="40dp"
             android:hint="請掃描閘門QRCODE"
             android:layout_alignParentRight="true"/>
 

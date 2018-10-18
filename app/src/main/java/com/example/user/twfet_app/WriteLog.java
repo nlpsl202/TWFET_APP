@@ -10,50 +10,42 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 /**
- * Created by jeff.
+ * Created by Jeff.
  */
-public class WriteLog
-{
-    public static void appendLog(String text)
-    {
+public class WriteLog {
+    public static void appendLog(String text) {
         File logFilePath = Environment.getExternalStorageDirectory();
-        File logFile = new File(logFilePath, getDate()+".txt");
-        if (!logFile.exists())
-        {
-            try
-            {
+        File logFile = new File(logFilePath, getDate() + ".txt");
+        if (!logFile.exists()) {
+            try {
                 logFile.createNewFile();
-            }
-            catch (IOException e)
-            {
+            } catch (IOException ex) {
                 // TODO Auto-generated catch block
-                e.printStackTrace();
+                ex.printStackTrace();
             }
         }
-        try
-        {
+        try {
             //BufferedWriter for performance, true to set append to file flag
             BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
-            buf.append(getDateTime()+"  "+text);
+            buf.append(getDateTime() + "  " + text);
             buf.newLine();
             buf.close();
-        }
-        catch (IOException e)
-        {
+        } catch (IOException ex) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            ex.printStackTrace();
         }
     }
 
-    //取得現在時間
-    public static String getDateTime(){
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    //取得現在時間 yyyy-MM-dd HH:mm:ss.SSS
+    public static String getDateTime() {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Calendar c = Calendar.getInstance();
         String str = df.format(c.getTime());
         return str;
     }
-    //取得現在時間
-    public static String getDate(){
+
+    //取得現在時間 yyyy-MM-dd
+    public static String getDate() {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         Calendar c = Calendar.getInstance();
         String str = df.format(c.getTime());

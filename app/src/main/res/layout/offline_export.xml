@@ -60,7 +60,7 @@
 
     <Button
         android:id="@+id/ReturnBtn"
-        android:layout_width="160dp"
+        android:layout_width="170dp"
         android:layout_height="75dp"
         android:background="@drawable/lastpage_btn_selector"
         android:layout_alignParentLeft="true"
@@ -68,7 +68,7 @@
 
     <Button
         android:id="@+id/NextBtn"
-        android:layout_width="160dp"
+        android:layout_width="170dp"
         android:layout_height="75dp"
         android:background="@drawable/nextpage_btn_selector"
         android:layout_alignParentRight="true"
@@ -76,7 +76,7 @@
 
     <Button
         android:id="@+id/HomeBtn"
-        android:layout_width="130dp"
+        android:layout_width="110dp"
         android:layout_height="100dp"
         android:background="@drawable/home_btn_selector"
         android:layout_centerInParent="true"
