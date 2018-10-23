@@ -9,7 +9,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Created by jeff.
+ * Created by Jeff.
  */
 public class ConnectionClass {
     //static String ip="172.16.30.181";

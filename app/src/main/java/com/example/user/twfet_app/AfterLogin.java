@@ -17,7 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * Created by jeff.
+ * Created by Jeff.
  */
 public class AfterLogin extends Activity {
     private Button OnlineTicketBtn, OffineTicketBtn, OnlineTicketCheckBtn, OfflineExportBtn;

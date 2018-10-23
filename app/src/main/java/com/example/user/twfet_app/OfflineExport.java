@@ -19,7 +19,7 @@ import android.widget.Toast;
 import java.sql.Connection;
 
 /**
- * Created by jeff.
+ * Created by Jeff.
  */
 public class OfflineExport extends Activity {
     private Button ImportBtn, ReturnBtn, HomeBtn;

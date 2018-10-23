@@ -35,7 +35,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * Created by jeff.
+ * Created by Jeff.
  */
 public class OnlineTickets extends Activity {
     private static final String key = "SET31275691$00000000000000000000";

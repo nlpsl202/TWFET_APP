@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 /**
- * Created by jeff.
+ * Created by Jeff.
  */
 public class MyDBHelper extends SQLiteOpenHelper {
     protected ArrayList<String[]> Result = null;
