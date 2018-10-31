@@ -133,7 +133,10 @@ public class OfflineTickets extends Activity {
                         SimpleDateFormat df3 = new SimpleDateFormat("yyyy-MM-dd");
                         Calendar c = Calendar.getInstance();
                         String[] ResultArray = new String[11];
-                        if (qr.length()==15 || qr.length()==11 || qr.length()==24 || qr.length()==14 || qr.length()==44) {
+                        if (qr.length()==15 || qr.length()==11 || qr.length()==24 || qr.length()==14 || qr.length()==44 || qr.length()==26) {
+                            if (qr.length()==26 && qr.indexOf('-')==14){
+                                qr=qr.substring(0,14);
+                            }
                             if (mydbHelper.IsTKQRCODEexist(qr, SPS_ID, df3.format(c.getTime()))) {
                                 FailedLayout.setVisibility(View.VISIBLE);
                                 setResultText(result = "票券狀態    ");
